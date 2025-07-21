@@ -1,7 +1,6 @@
 import { Calendar, CalendarDays, Clock, Plus, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/common/Header";
 
 const CalendarPage = () => {
   const mockEvents = [
@@ -22,8 +21,6 @@ const CalendarPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       {/* Hero Header */}
       <div className="bg-gradient-hero text-white">
         <div className="container mx-auto px-4 py-12">

@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Header } from "@/components/common/Header";
 
 const QuestoesPage = () => {
   const subjects = [
@@ -64,8 +63,6 @@ const QuestoesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       {/* Hero Header */}
       <div className="bg-gradient-primary text-white">
         <div className="container mx-auto px-4 py-12">

@@ -2,7 +2,6 @@ import { BarChart3, Clock, Play, TrendingUp, Award, FileText } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Header } from "@/components/common/Header";
 
 const SimuladosPage = () => {
   const simulados = [
@@ -61,8 +60,6 @@ const SimuladosPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       {/* Hero Header */}
       <div className="bg-gradient-accent text-white">
         <div className="container mx-auto px-4 py-12">

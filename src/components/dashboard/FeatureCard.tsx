@@ -25,6 +25,8 @@ export function FeatureCard({
   const handleClick = () => {
     if (!comingSoon) {
       navigate(href);
+    } else if (href === "/estudos") {
+      navigate(href); // Allow navigation to the coming soon page
     }
   };
   return (
@@ -49,10 +51,9 @@ export function FeatureCard({
         <p className="text-muted-foreground leading-relaxed">{description}</p>
         <Button 
           className="w-full group-hover:bg-primary/90 transition-colors duration-300"
-          disabled={comingSoon}
           onClick={handleClick}
         >
-          {comingSoon ? 'Aguarde' : 'Acessar'}
+          {comingSoon ? 'Ver Detalhes' : 'Acessar'}
         </Button>
       </CardContent>
     </Card>
