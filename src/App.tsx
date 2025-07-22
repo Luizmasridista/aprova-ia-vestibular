@@ -1,39 +1,107 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import CalendarPage from "./pages/Calendar";
-import EstudosPage from "./pages/Estudos";
-import SimuladosPage from "./pages/Simulados";
-import QuestoesPage from "./pages/Questoes";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { APP_URLS } from '@/config/urls';
 
+// Layout
 import { Layout } from "./components/layout/Layout";
 
+// Auth Context
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+
+// Pages
+const Index = lazy(() => import('./pages/Index'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
+const SimuladosPage = lazy(() => import('./pages/Simulados'));
+const QuestoesPage = lazy(() => import('./pages/Questoes'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage'));
+const LoginPage = lazy(() => import('./pages/Login'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const DashboardPage = lazy(() => import('./pages/Dashboard'));
+
+// Components
+import { LoadingScreen, LoadingPage } from './components/ui/loading-screen';
+
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/estudos" element={<EstudosPage />} />
-            <Route path="/calendario" element={<CalendarPage />} />
-            <Route path="/simulados" element={<SimuladosPage />} />
-            <Route path="/questoes" element={<QuestoesPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+// Loading component for Suspense fallback
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <LoadingScreen />
+  </div>
 );
+
+
+
+// Componente para rotas protegidas
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  console.log('🚫 ProtectedRoute check:', { 
+    user: user?.email || 'No user', 
+    loading, 
+    currentPath: window.location.pathname 
+  });
+  
+  if (loading) {
+    console.log('⏳ ProtectedRoute: Loading...');
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>;
+  }
+  
+  if (!user) {
+    console.log('🚪 ProtectedRoute: No user, redirecting to login from:', window.location.pathname);
+    // Salva a página atual para redirecionar após login
+    sessionStorage.setItem('returnTo', window.location.pathname);
+    return <Navigate to="/login" replace />;
+  }
+  
+  console.log('✅ ProtectedRoute: User authenticated, rendering children');
+  return <>{children}</>;
+};
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/simulados" element={<ProtectedRoute><Layout><SimuladosPage /></Layout></ProtectedRoute>} />
+                <Route path="/questoes" element={<ProtectedRoute><Layout><QuestoesPage /></Layout></ProtectedRoute>} />
+                <Route path="/calendario" element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
+                <Route path="/plano-estudos" element={<ProtectedRoute><Layout><StudyPlanPage /></Layout></ProtectedRoute>} />
+                <Route path="/study-plan" element={<ProtectedRoute><Layout><StudyPlanPage /></Layout></ProtectedRoute>} />
+                <Route path="/perfil" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+                
+                {/* 404 - Not Found */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

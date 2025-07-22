@@ -60,16 +60,6 @@ const SimuladosPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Header */}
-      <div className="bg-gradient-accent text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Simulados</h1>
-            <p className="text-white/80 text-lg">Pratique e acompanhe seu desempenho</p>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Available Exams */}

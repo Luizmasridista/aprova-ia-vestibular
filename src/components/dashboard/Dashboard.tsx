@@ -15,9 +15,10 @@ import {
   Sparkles
 } from "lucide-react";
 import heroImage from "@/assets/hero-education.jpg";
+import { useState, useEffect } from 'react';
 
 export function Dashboard() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Horas Estudadas",
       value: "0h",
@@ -46,16 +47,15 @@ export function Dashboard() {
       icon: TrendingUp,
       trend: { value: "Iniciante", isPositive: true }
     }
-  ];
+  ]);
 
-  const features = [
+  const [features, setFeatures] = useState([
     {
       title: "Grade de Estudos IA",
       description: "Cronograma personalizado gerado por inteligência artificial, adaptado ao seu perfil e metas de aprovação.",
       icon: Brain,
-      href: "/estudos",
-      gradient: "bg-gradient-primary",
-      comingSoon: true
+      href: "/study-plan",
+      gradient: "bg-gradient-primary"
     },
     {
       title: "Calendário Integrado",
@@ -78,7 +78,24 @@ export function Dashboard() {
       href: "/questoes",
       gradient: "bg-gradient-accent"
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    // Aqui viria a chamada à API para buscar os dados reais
+    const fetchDashboardData = async () => {
+      try {
+        // Exemplo de chamada à API:
+        // const response = await fetch('/api/dashboard');
+        // const data = await response.json();
+        // setStats(data.stats);
+        // setFeatures(data.features);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

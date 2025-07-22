@@ -1,8 +1,89 @@
-# Welcome to your Lovable project
+# APROVA.AE - Plataforma de Estudos para Vestibulares
 
-## Project info
+## Visão Geral
 
-**URL**: https://lovable.dev/projects/10380fce-41fc-43c2-8b4c-e0a6df9556fc
+O APROVA.AE é uma plataforma de estudos personalizados para vestibulares que utiliza IA para criar planos de estudo adaptados às necessidades de cada aluno.
+
+## Configuração do Ambiente
+
+### Pré-requisitos
+
+- Node.js 16+ e npm
+- Conta no Supabase
+- Conta em um serviço de e-mail (como SendGrid, Mailgun, etc.)
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+
+# Configurações de e-mail (para desenvolvimento)
+SMTP_HOST=smtp.seu-provedor.com
+SMTP_PORT=587
+SMTP_USER=seu-email@exemplo.com
+SMTP_PASS=sua-senha
+SMTP_FROM=noreply@seu-dominio.com
+SMTP_FROM_NAME="APROVA.AE"
+```
+
+### Configuração do Supabase
+
+1. Crie um novo projeto no [Supabase](https://supabase.com/)
+2. Habilite o provedor de autenticação por e-mail/senha
+3. Configure as URLs de redirecionamento no painel do Supabase:
+   - `http://localhost:5173/auth/callback` (desenvolvimento)
+   - `https://seu-dominio.com/auth/callback` (produção)
+   - `http://localhost:5173/reset-password` (redefinição de senha)
+   - `https://seu-dominio.com/reset-password` (redefinição de senha em produção)
+
+4. Execute as migrações SQL para configurar os templates de e-mail:
+   - Execute o script `supabase/migrations/20240721210000_email_templates.sql` no SQL Editor do Supabase
+   - Atualize as configurações de SMTP com suas credenciais reais
+
+## Desenvolvimento
+
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/seu-usuario/aprova-ae.git
+   cd aprova-ae
+   ```
+
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+4. Acesse a aplicação em [http://localhost:5173](http://localhost:5173)
+
+## Estrutura do Projeto
+
+- `/src/components` - Componentes reutilizáveis
+- `/src/pages` - Páginas da aplicação
+- `/src/lib` - Utilitários e configurações
+- `/src/hooks` - Custom React Hooks
+- `/src/types` - Definições de tipos TypeScript
+- `/public` - Arquivos estáticos
+
+## Funcionalidades
+
+- Autenticação de usuários com e-mail/senha
+- Redefinição de senha
+- Geração de plano de estudos personalizado com IA
+- Acompanhamento de progresso
+- Simulados e questões
+- Calendário de estudos
+
+## Licença
+
+MIT
 
 ## How can I edit this code?
 

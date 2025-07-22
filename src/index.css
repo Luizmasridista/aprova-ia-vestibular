@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos personalizados para o menu lateral */
+.sidebar-transition {
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1), min-width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Garante que o conteúdo não seja cortado */
+.sidebar-content {
+  min-width: fit-content;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* Animações suaves para itens do menu */
+.sidebar-item {
+  transition: all 200ms ease-in-out;
+}
+
+/* Ajustes para tooltips */
+.tooltip-content {
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Melhora a legibilidade do texto */
+.sidebar-text {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

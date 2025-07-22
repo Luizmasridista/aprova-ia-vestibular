@@ -7,7 +7,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/app/components/*"],
+      "@services/*": ["./src/app/services/*"],
+      "@models/*": ["./src/app/models/*"],
+      "@pipes/*": ["./src/app/pipes/*"],
+      "@directives/*": ["./src/app/directives/*"],
+      "@guards/*": ["./src/app/guards/*"],
+      "@interceptors/*": ["./src/app/interceptors/*"],
+      "@modules/*": ["./src/app/modules/*"]
     },
     "noImplicitAny": false,
     "noUnusedParameters": false,

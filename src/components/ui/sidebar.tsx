@@ -97,18 +97,48 @@ const SidebarProvider = React.forwardRef<
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (
-          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-          (event.metaKey || event.ctrlKey)
-        ) {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
           event.preventDefault()
-          toggleSidebar()
+          setOpen((open) => !open)
         }
       }
 
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [setOpen])
+
+    // Handle custom events for hover with debounce
+    React.useEffect(() => {
+      let expandTimeout: NodeJS.Timeout
+      let collapseTimeout: NodeJS.Timeout
+      const debounceDelay = 100 // ms
+
+      const handleExpand = () => {
+        clearTimeout(collapseTimeout)
+        if (!open) {
+          expandTimeout = setTimeout(() => setOpen(true), debounceDelay)
+        }
+      }
+
+      const handleCollapse = () => {
+        clearTimeout(expandTimeout)
+        if (open) {
+          collapseTimeout = setTimeout(() => setOpen(false), debounceDelay)
+        }
+      }
+
+      // Add event listeners
+      document.addEventListener('sidebar:expand', handleExpand)
+      document.addEventListener('sidebar:collapse', handleCollapse)
+
+      // Cleanup
+      return () => {
+        document.removeEventListener('sidebar:expand', handleExpand)
+        document.removeEventListener('sidebar:collapse', handleCollapse)
+        clearTimeout(expandTimeout)
+        clearTimeout(collapseTimeout)
+      }
+    }, [open, setOpen])
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.
@@ -222,13 +252,13 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
+            "fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out",
+            "group-data-[state=expanded]:w-[260px]",
+            "group-data-[state=collapsed]:w-[72px] hover:w-[260px]",
+            "transition: width 0.3s ease-in-out, transform 0.3s ease-in-out",
+            className
           )}
+          {...props}
         />
         <div
           className={cn(
