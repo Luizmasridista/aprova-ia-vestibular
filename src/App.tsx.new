@@ -1,0 +1,87 @@
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+
+// Layout
+import { Layout } from "./components/layout/Layout";
+
+// Hooks
+import { AuthProvider } from "@/hooks/useAuth";
+
+// Pages
+const Index = lazy(() => import('./pages/Index'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
+const EstudosPage = lazy(() => import('./pages/Estudos'));
+const SimuladosPage = lazy(() => import('./pages/Simulados'));
+const QuestoesPage = lazy(() => import('./pages/Questoes'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage'));
+const LoginPage = lazy(() => import('./pages/Login'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+
+// Components
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+
+// Create a client
+const queryClient = new QueryClient();
+
+// Loading component for Suspense fallback
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  </div>
+);
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                
+                {/* Protected Routes */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Index />} />
+                  <Route path="estudos" element={<EstudosPage />} />
+                  <Route path="simulados" element={<SimuladosPage />} />
+                  <Route path="questoes" element={<QuestoesPage />} />
+                  <Route path="calendario" element={<CalendarPage />} />
+                  <Route path="plano-estudos" element={<StudyPlanPage />} />
+                  <Route path="perfil" element={<ProfilePage />} />
+                  
+                  {/* Redirect any unknown paths to home */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+                
+                {/* 404 - Not Found */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
