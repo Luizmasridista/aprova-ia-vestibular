@@ -15,7 +15,7 @@ WHERE id = 'email';
 UPDATE auth.providers
 SET url = 'https://seu-dominio.com'
 WHERE id = 'email';
-
+M
 -- Template de confirmação de e-mail
 INSERT INTO auth.email_templates (id, subject, content, created_at, updated_at)
 VALUES (

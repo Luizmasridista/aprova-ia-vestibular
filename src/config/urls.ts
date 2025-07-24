@@ -8,7 +8,6 @@ export const APP_URLS = {
   DASHBOARD: '/dashboard',
   STUDY_PLAN: '/plano-estudos',
   EXAMS: '/simulados',
-  QUESTIONS: '/questoes',
   CALENDAR: '/calendario',
   PROFILE: '/perfil',
 } as const;

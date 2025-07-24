@@ -1,6 +1,132 @@
+@import './styles/buttons.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0 solid hsl(var(--border));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+body {
+  line-height: inherit;
+  margin: 0;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Estilos para links */
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/* Estilos para listas */
+ul, ol {
+  list-style: none;
+}
+
+/* Estilos para imagens */
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  /* Removido vertical-align desnecessário com display: block */
+}
+
+/* Estilos para formulários */
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button, select {
+  text-transform: none;
+}
+
+button, [type='button'], [type='reset'], [type='submit'] {
+  -webkit-appearance: button;
+  appearance: button; /* Adicionada propriedade padrão */
+  background-color: transparent;
+  background-image: none;
+  cursor: pointer;
+}
+
+/* Estilos para foco */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Classes de utilidade */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Container */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
 
 /* Estilos personalizados para o menu lateral */
 .sidebar-transition {
@@ -36,108 +162,101 @@
 All colors MUST be HSL.
 */
 
-@layer base {
-  :root {
-    --background: 240 10% 98%;
-    --foreground: 240 10% 15%;
+/* Tema claro (padrão) */
+:root {
+  --background: 240 10% 98%;
+  --foreground: 240 10% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 15%;
 
-    --primary: 234 89% 74%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 234 100% 85%;
+  --primary: 210 100% 75%; /* Azul claro do topo da nuvem */
+  --primary-foreground: 0 0% 100%;
+  --primary-glow: 210 100% 85%; /* Brilho mais claro do azul primário */
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 15%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 10% 15%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 5% 45%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 5% 45%;
 
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-    --accent-glow: 262 100% 75%;
+  --accent: 220 100% 50%; /* Azul mais escuro da base da nuvem */
+  --accent-foreground: 0 0% 100%;
+  --accent-glow: 220 100% 60%; /* Brilho mais claro do azul de destaque */
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+  --success: 210 100% 65%; /* Tom de azul do branding para sucesso */
+  --success-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+  --destructive: 0 100% 65%; /* Vermelho mais vibrante para ações destrutivas */
+  --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 234 89% 74%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 220 100% 50%; /* Cor do anel de foco igual ao destaque */
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(240 6% 98%) 100%);
+  --gradient-primary: linear-gradient(135deg, hsl(210 100% 75%), hsl(210 100% 85%));
+  --gradient-accent: linear-gradient(135deg, hsl(220 100% 50%), hsl(220 100% 60%));
+  --gradient-hero: linear-gradient(135deg, hsl(210 100% 75%) 0%, hsl(220 100% 50%) 100%);
+  --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(240 6% 98%) 100%);
 
-    --shadow-soft: 0 2px 20px -2px hsl(var(--primary) / 0.08);
-    --shadow-medium: 0 8px 30px -6px hsl(var(--primary) / 0.12);
-    --shadow-strong: 0 20px 40px -8px hsl(var(--primary) / 0.16);
-    
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-soft: 0 2px 20px -2px hsl(220 100% 50% / 0.15);
+  --shadow-medium: 0 8px 30px -6px hsl(220 100% 50% / 0.2);
+  --shadow-strong: 0 20px 40px -8px hsl(220 100% 50% / 0.25);
+  
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --radius: 0.5rem;
+  --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+  --sidebar-background: 210 40% 98%; /* Fundo branco azulado suave */
+  --sidebar-foreground: 220 39% 11%; /* Texto escuro para contraste */
+  --sidebar-primary: 220 100% 50%; /* Azul do branding para itens ativos */
+  --sidebar-primary-foreground: 0 0% 100%; /* Texto branco sobre azul */
+  --sidebar-accent: 210 100% 90%; /* Azul muito claro para hover */
+  --sidebar-accent-foreground: 220 100% 50%; /* Azul do branding para texto */
+  --sidebar-border: 214 32% 91%; /* Borda sutil */
+  --sidebar-ring: 217.2 91.2% 59.8%;
+}
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+/* Tema escuro */
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
 
-    --sidebar-primary: 240 5.9% 10%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
 
-    --sidebar-border: 220 13% 91%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 240 4.8% 95.9%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
 @layer base {

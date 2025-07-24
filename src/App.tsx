@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -16,14 +17,15 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 const Index = lazy(() => import('./pages/Index'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const SimuladosPage = lazy(() => import('./pages/Simulados'));
-const QuestoesPage = lazy(() => import('./pages/Questoes'));
+const ExerciciosPage = lazy(() => import('./pages/Exercicios'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage'));
 const LoginPage = lazy(() => import('./pages/Login'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const DashboardPage = lazy(() => import('./pages/Dashboard'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const DashboardPage = lazy(() => import("./components/dashboard/Dashboard"));
 
 // Components
 import { LoadingScreen, LoadingPage } from './components/ui/loading-screen';
@@ -71,6 +73,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -84,14 +87,24 @@ function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 
                 {/* Protected Routes */}
-                <Route path="/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/simulados" element={<ProtectedRoute><Layout><SimuladosPage /></Layout></ProtectedRoute>} />
-                <Route path="/questoes" element={<ProtectedRoute><Layout><QuestoesPage /></Layout></ProtectedRoute>} />
-                <Route path="/calendario" element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
-                <Route path="/plano-estudos" element={<ProtectedRoute><Layout><StudyPlanPage /></Layout></ProtectedRoute>} />
-                <Route path="/study-plan" element={<ProtectedRoute><Layout><StudyPlanPage /></Layout></ProtectedRoute>} />
-                <Route path="/perfil" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/simulados" element={<SimuladosPage />} />
+                  <Route path="/exercicios" element={<ExerciciosPage />} />
+                  <Route path="/calendario" element={<CalendarPage />} />
+                  <Route path="/plano-estudos" element={<StudyPlanPage />} />
+                  <Route path="/study-plan" element={<StudyPlanPage />} />
+                  <Route path="/perfil" element={<ProfilePage />} />
+                  <Route path="/configuracoes" element={<SettingsPage />} />
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                </Route>
+                
+                
+                
+                
+                
+                
+                
                 
                 {/* 404 - Not Found */}
                 <Route path="*" element={<NotFound />} />
@@ -100,6 +113,7 @@ function App() {
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
+      </HelmetProvider>
     </QueryClientProvider>
   );
 }
