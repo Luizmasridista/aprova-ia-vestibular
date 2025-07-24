@@ -1,4 +1,14 @@
 import { CalendarEvent } from '@/lib/services/calendarService';
+import { detectMessageType, generateNaturalResponse } from './assistantResponses';
+
+type ParsedMessage = {
+  subject?: string;
+  date?: Date | null;
+  isDirectRequest?: boolean;
+  isListRequest?: boolean;
+  originalMessage?: string;
+  isGreeting?: boolean;
+};
 
 // Analisar progresso do usuário
 export const analyzeProgress = (events: CalendarEvent[]) => {
@@ -31,10 +41,24 @@ export const analyzeProgress = (events: CalendarEvent[]) => {
 };
 
 // Extrair informações específicas da mensagem do usuário
-export const parseUserMessage = (message: string) => {
+export const parseUserMessage = (message: string): ParsedMessage => {
   const lowerMessage = message.toLowerCase().trim();
   
-  console.log(' [CalendarChatUtils] Analisando mensagem:', { original: message, lower: lowerMessage });
+  console.log(' [CalendarChatUtils] Analisando mensagem:', { 
+    original: message,
+    lowerCase: lowerMessage 
+  });
+  
+  // Se for uma saudação, não precisa processar mais nada
+  if (detectMessageType(lowerMessage)) {
+    return { isGreeting: true };
+  }
+  
+  const parsedMessage: ParsedMessage = {
+    isDirectRequest: false,
+    isListRequest: false,
+    originalMessage: message
+  };
   
   // Detectar matérias mencionadas - versão expandida
   const subjects = {
@@ -179,12 +203,14 @@ export const parseUserMessage = (message: string) => {
                        lowerMessage.includes('ver atividades') ||
                        lowerMessage.includes('ver eventos');
   
-  const result = {
-    subject: detectedSubject,
-    date: detectedDate,
+  // Construir objeto de resultado com todas as propriedades necessárias
+  const result: ParsedMessage = {
+    subject: detectedSubject || undefined,
+    date: detectedDate || null,
     isDirectRequest,
     isListRequest,
-    originalMessage: message
+    originalMessage: message,
+    isGreeting: false // Já tratado no início da função
   };
   
   console.log(' [CalendarChatUtils] Resultado do parsing:', result);
@@ -192,14 +218,20 @@ export const parseUserMessage = (message: string) => {
 };
 
 // Detectar intenções do usuário
-export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_progress' | 'suggest_activities' | 'general_chat' | 'create_schedule' | 'direct_create_event' | 'edit_event' | 'delete_event' | 'list_events' => {
+export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_progress' | 'suggest_activities' | 'general_chat' | 'create_schedule' | 'direct_create_event' | 'edit_event' | 'delete_event' | 'delete_all_events' | 'delete_week_events' | 'list_events' => {
   const lowerMessage = message.toLowerCase().trim();
+  
+  // Se já foi detectado como resposta natural, não processar como comando
+  if (generateNaturalResponse(message)) {
+    return 'general_chat';
+  }
+  
   const parsed = parseUserMessage(message);
   
   console.log(' [CalendarChatUtils] Detectando intenção:', { message, lowerMessage, parsed });
   
   // Solicitações de listagem/consulta - NOVA FUNCIONALIDADE
-  if (parsed.isListRequest || 
+  if (('isListRequest' in parsed && parsed.isListRequest) || 
       lowerMessage.includes('tenho hoje') ||
       lowerMessage.includes('tenho no dia') ||
       lowerMessage.includes('tenho amanhã') ||
@@ -215,6 +247,38 @@ export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_p
     return 'list_events';
   }
   
+  // Solicitações de exclusão de TODOS os eventos - deve ser MUITO específica
+  if ((lowerMessage.includes('todos') || lowerMessage.includes('todas') || 
+       lowerMessage.includes('tudo') || lowerMessage.includes('toda a agenda') ||
+       lowerMessage.includes('limpar agenda') || lowerMessage.includes('limpar calendário') ||
+       lowerMessage.includes('apagar tudo') || lowerMessage.includes('excluir tudo')) && 
+      (lowerMessage.includes('excluir') || lowerMessage.includes('deletar') || 
+       lowerMessage.includes('remover') || lowerMessage.includes('apagar') || 
+       lowerMessage.includes('limpar')) && 
+      (lowerMessage.includes('eventos') || lowerMessage.includes('atividades') || 
+       lowerMessage.includes('agenda') || lowerMessage.includes('calendário') ||
+       lowerMessage.includes('calendario')) &&
+      // IMPORTANTE: NÃO deve conter referências de data específica
+      !lowerMessage.includes('do dia') && !lowerMessage.includes('da data') && 
+      !lowerMessage.includes('de hoje') && !lowerMessage.includes('de amanhã') &&
+      !/\b\d{1,2}\b/.test(lowerMessage)) { // Não deve conter números (dias)
+    console.log('🗑️ [CalendarChatUtils] Intenção de exclusão de TODOS os eventos detectada');
+    return 'delete_all_events';
+  }
+  
+  // Solicitações de exclusão por SEMANA - deve vir ANTES da detecção geral
+  if ((lowerMessage.includes('excluir') || lowerMessage.includes('deletar') || 
+       lowerMessage.includes('remover') || lowerMessage.includes('apagar') || 
+       lowerMessage.includes('limpar')) && 
+      (lowerMessage.includes('eventos') || lowerMessage.includes('atividades')) &&
+      (lowerMessage.includes('da semana') || lowerMessage.includes('desta semana') || 
+       lowerMessage.includes('da próxima semana') || lowerMessage.includes('próxima semana') ||
+       lowerMessage.includes('semana que vem') || lowerMessage.includes('esta semana') ||
+       lowerMessage.includes('na semana'))) {
+    console.log('📅 [CalendarChatUtils] Intenção de exclusão por SEMANA detectada:', lowerMessage);
+    return 'delete_week_events';
+  }
+  
   // Solicitações de exclusão - versão melhorada
   if (lowerMessage.includes('excluir') || lowerMessage.includes('deletar') || 
       lowerMessage.includes('remover') || lowerMessage.includes('cancelar') || 
@@ -222,7 +286,11 @@ export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_p
       lowerMessage.includes('remova') || lowerMessage.includes('pode remover') || 
       lowerMessage.includes('exclua') || lowerMessage.includes('tire') ||
       lowerMessage.includes('eliminar') || lowerMessage.includes('desmarcar')) {
-    console.log(' [CalendarChatUtils] Intenção de exclusão detectada');
+    console.log('🗑️ [CalendarChatUtils] Intenção de exclusão detectada para:', lowerMessage);
+    console.log('🗑️ [CalendarChatUtils] Contém referência de data:', 
+      lowerMessage.includes('do dia') || lowerMessage.includes('da data') || 
+      lowerMessage.includes('de hoje') || lowerMessage.includes('de amanhã') ||
+      /\b\d{1,2}\b/.test(lowerMessage));
     return 'delete_event';
   }
   
@@ -235,7 +303,7 @@ export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_p
   }
   
   // Solicitações diretas de criação (com matéria ou data específica)
-  if (parsed.isDirectRequest && (parsed.subject || parsed.date)) {
+  if ('isDirectRequest' in parsed && parsed.isDirectRequest && (parsed.subject || parsed.date)) {
     console.log(' [CalendarChatUtils] Intenção de criação direta detectada');
     return 'direct_create_event';
   }
@@ -297,8 +365,13 @@ export const detectUserIntent = (message: string): 'schedule_event' | 'analyze_p
   return 'general_chat';
 };
 
-// Encontrar evento por matéria ou data
-export const findEventByContext = (message: string, events: CalendarEvent[]) => {
+/**
+ * Encontra um evento com base no contexto da mensagem do usuário
+ * @param message Mensagem do usuário para extrair contexto
+ * @param events Lista de eventos para busca
+ * @returns O evento correspondente ou null se nenhum for encontrado
+ */
+export const findEventByContext = (message: string, events: CalendarEvent[]): CalendarEvent | null => {
   const parsed = parseUserMessage(message);
   const lowerMessage = message.toLowerCase();
   
@@ -341,8 +414,12 @@ export const findEventByContext = (message: string, events: CalendarEvent[]) => 
   return null;
 };
 
-// Cores por matéria
-export const getSubjectColor = (subject: string) => {
+/**
+ * Retorna a cor associada a uma matéria específica
+ * @param subject Nome da matéria
+ * @returns Código de cor em formato hexadecimal ou cinza padrão se não encontrado
+ */
+export const getSubjectColor = (subject: string): string => {
   const colors: { [key: string]: string } = {
     'matemática': '#3b82f6',
     'português': '#10b981',

@@ -167,13 +167,9 @@ export const calendarService = {
 
       console.log('✅ [CalendarService] Evento criado com sucesso:', data.id);
       
-      // Se for recorrente, gerar eventos futuros
+      // Se for recorrente, apenas logar (eventos recorrentes são criados individualmente)
       if (eventData.is_recurring && eventData.recurrence_pattern) {
-        try {
-          await this.generateRecurringEvents(data.id);
-        } catch (recurringError) {
-          console.error('⚠️ [CalendarService] Erro ao gerar eventos recorrentes (não crítico):', recurringError);
-        }
+        console.log('📅 [CalendarService] Evento recorrente criado. Padrão:', eventData.recurrence_pattern);
       }
 
       return data;
@@ -258,28 +254,7 @@ export const calendarService = {
     }
   },
 
-  // Gerar eventos recorrentes
-  async generateRecurringEvents(baseEventId: string, endDate?: string): Promise<number> {
-    try {
-      console.log('🔄 [CalendarService] Gerando eventos recorrentes:', baseEventId);
-      
-      const { data, error } = await supabase.rpc('generate_recurring_events', {
-        base_event_id: baseEventId,
-        end_date: endDate
-      });
 
-      if (error) {
-        console.error('❌ [CalendarService] Erro ao gerar eventos recorrentes:', error);
-        throw error;
-      }
-
-      console.log('✅ [CalendarService] Eventos recorrentes gerados:', data);
-      return data || 0;
-    } catch (error) {
-      console.error('❌ [CalendarService] Erro ao gerar eventos recorrentes:', error);
-      throw new Error('Não foi possível gerar eventos recorrentes');
-    }
-  },
 
   // Converter plano de estudos em eventos do calendário
   async createEventsFromStudyPlan(request: StudyPlanToCalendarRequest): Promise<CalendarEvent[]> {
@@ -389,7 +364,7 @@ export const calendarService = {
             };
 
             // Encontrar a primeira ocorrência do dia da semana
-            let currentDate = new Date(startDate);
+            const currentDate = new Date(startDate);
             while (currentDate.getDay() !== dayOfWeek) {
               currentDate.setDate(currentDate.getDate() + 1);
             }

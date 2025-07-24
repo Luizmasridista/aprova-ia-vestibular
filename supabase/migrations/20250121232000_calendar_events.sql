@@ -1,4 +1,4 @@
--- Criação da tabela de eventos do calendário
+Pode -- Criação da tabela de eventos do calendário
 CREATE TABLE IF NOT EXISTS calendar_events (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,

@@ -311,6 +311,91 @@ Importante: Crie um cronograma realista e específico para vestibulares brasilei
       throw error; // Propagar o erro para o componente lidar com ele
     }
   }
+
+  /**
+   * Método para gerar conteúdo genérico usando IA (para exercícios)
+   */
+  async generateContent(prompt: string): Promise<string> {
+    console.log('🤖 [AI Service] Gerando conteúdo com IA...');
+    
+    try {
+      // Tentar primeiro com Gemini (mais rápido)
+      const response = await fetch(`${this.geminiApiUrl}/models/gemini-1.5-flash:generateContent?key=${this.geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1500,
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!content) {
+        throw new Error('Resposta inválida do Gemini');
+      }
+
+      console.log('✅ [AI Service] Conteúdo gerado com sucesso pelo Gemini');
+      return content;
+      
+    } catch (error) {
+      console.log('🔄 [AI Service] Gemini falhou, tentando DeepSeek...');
+      
+      try {
+        // Fallback para DeepSeek
+        const response = await fetch(`${this.deepseekApiUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.deepseekApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`DeepSeek API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        
+        if (!content) {
+          throw new Error('Resposta inválida do DeepSeek');
+        }
+
+        console.log('✅ [AI Service] Conteúdo gerado com sucesso pelo DeepSeek');
+        return content;
+        
+      } catch (deepseekError) {
+        console.error('❌ [AI Service] Ambas as IAs falharam:', deepseekError);
+        throw new Error('Serviços de IA indisponíveis. Tente novamente.');
+      }
+    }
+  }
 }
 
 export const aiService = new AIService();

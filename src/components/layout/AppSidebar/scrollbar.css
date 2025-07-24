@@ -1,0 +1,39 @@
+/* Estilos personalizados para a barra de rolagem */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+  scrollbar-gutter: stable;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+  margin: 4px 0;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Firefox */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Hover effect for Firefox */
+.sidebar-scrollbar:hover {
+  scrollbar-color: #94a3b8 transparent;
+}

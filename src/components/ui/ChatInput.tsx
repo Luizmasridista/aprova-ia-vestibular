@@ -21,12 +21,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
   selectedMode,
   inputRef,
   quickSuggestions = [
-    "Como estou?",
-    "O que estudar?",
-    "Criar cronograma",
-    "Agendar atividade",
-    "Editar próximo evento",
-    "Excluir último evento"
+    "Como está meu progresso?",
+    "O que devo estudar hoje?",
+    "Quais atividades tenho hoje?",
+    "Criar uma sessão de matemática",
+    "Agendar revisão para amanhã",
+    "Mostrar minha agenda da semana"
   ],
   showSuggestions = false
 }) => {

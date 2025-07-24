@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export interface Message {
   id: string;
@@ -29,43 +29,58 @@ export const useCalendarChat = () => {
   }, [messages]);
 
   // Inicializar com mensagem de boas-vindas baseada no modo
-  const getInitialMessage = (mode: 'APRU_1b' | 'APRU_REASONING') => {
+  const getInitialMessage = useCallback((mode: 'APRU_1b' | 'APRU_REASONING') => {
+    const currentHour = new Date().getHours();
+    const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite';
+    
     if (mode === 'APRU_1b') {
-      return 'Olá! Sou o APRU 1b 😊 Posso analisar seu progresso e criar atividades personalizadas.';
+      return `${greeting}! 😊 Sou o APRU 1b. Como posso ajudar com seus estudos hoje?`;
     } else {
-      return 'Olá! Sou o APRU REASONING 🧠 Posso fazer análises profundas e criar planos detalhados.';
-    }
-  };
-
-  useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([{
-        id: '1',
-        type: 'ai',
-        content: getInitialMessage(selectedMode),
-        timestamp: new Date(),
-        mode: selectedMode
-      }]);
+      return `${greeting}! 🧠 Sou o APRU REASONING. Pronto para uma análise detalhada dos seus estudos?`;
     }
   }, []);
 
-  // Atualizar mensagem inicial quando modo mudar
+  // Refs para controlar inicialização e evitar loops
+  const isInitialized = useRef(false);
+  const lastSelectedMode = useRef(selectedMode);
+  
+  // Inicializar mensagens apenas uma vez
   useEffect(() => {
-    if (messages.length === 1 && messages[0].type === 'ai') {
+    if (messages.length === 0 && !isInitialized.current) {
+      isInitialized.current = true;
       setMessages([{
-        id: '1',
+        id: `init-${Math.random().toString(36).slice(2, 8)}`,
         type: 'ai',
         content: getInitialMessage(selectedMode),
         timestamp: new Date(),
         mode: selectedMode
       }]);
     }
-  }, [selectedMode]);
+  }, [messages.length, selectedMode, getInitialMessage]);
+
+  // Atualizar mensagem inicial quando modo mudar (apenas se for a mensagem inicial)
+  useEffect(() => {
+    // Usar ref para acessar messages sem causar re-render
+    const currentMessages = messages;
+    if (selectedMode !== lastSelectedMode.current && 
+        currentMessages.length === 1 && 
+        currentMessages[0].type === 'ai' && 
+        currentMessages[0].id.startsWith('init-')) {
+      lastSelectedMode.current = selectedMode;
+      setMessages([{
+        id: `init-${Math.random().toString(36).slice(2, 8)}`,
+        type: 'ai',
+        content: getInitialMessage(selectedMode),
+        timestamp: new Date(),
+        mode: selectedMode
+      }]);
+    }
+  }, [messages, selectedMode, getInitialMessage]); // Incluindo messages mas com lógica segura
 
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
       ...message,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);

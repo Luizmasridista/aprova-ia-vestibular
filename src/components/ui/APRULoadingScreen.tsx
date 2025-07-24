@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coffee, Brain, Sparkles, Clock, BookOpen, Target, Zap } from 'lucide-react';
 
@@ -89,15 +90,24 @@ const APRULoadingScreen: React.FC<APRULoadingScreenProps> = ({ mode, isVisible }
 
   const config = modeConfig[mode];
 
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-white/95 backdrop-blur-sm z-50 flex items-center justify-center"
-        >
+  // Criar portal para renderizar fora do contexto atual
+  const loadingContent = (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center"
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        zIndex: 9999,
+        margin: 0,
+        padding: 0
+      }}
+    >
           <div className="max-w-md w-full mx-4">
             {/* Card Principal */}
             <motion.div
@@ -224,9 +234,14 @@ const APRULoadingScreen: React.FC<APRULoadingScreenProps> = ({ mode, isVisible }
               Relaxe! Estou criando algo especial para você 🎯
             </motion.p>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </motion.div>
+  );
+
+  return createPortal(
+    <AnimatePresence>
+      {isVisible && loadingContent}
+    </AnimatePresence>,
+    document.body
   );
 };
 

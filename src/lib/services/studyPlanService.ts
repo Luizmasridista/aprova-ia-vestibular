@@ -1,6 +1,8 @@
 import { supabase } from '../supabase';
 import { aiService } from './aiService';
 import { calendarService } from './calendarService';
+import { monthlyGoalsService } from './monthlyGoalsService';
+
 export interface StudyPlanConfig {
   modes: Array<{
     id: string;
@@ -20,8 +22,133 @@ export interface StudyPlanConfig {
 
 export interface StudyPlanRequest {
   mode: 'APRU_1b' | 'APRU_REASONING';
-  answers: Record<string, any>;
+  answers: Record<string, unknown> & {
+    targetCourse?: string;
+    targetInstitution?: string;
+    targetCourse_data?: Record<string, unknown>;
+    subjects?: string[];
+    mainGoal?: string;
+    targetDate?: string;
+    hoursPerDay?: number;
+  };
   userId?: string;
+}
+
+// Interfaces for weekly schedule
+export interface WeeklyScheduleSubject {
+  name: string;
+  time: string;
+  duration?: number;
+  topic?: string;
+  type?: 'study' | 'review' | 'exercise' | 'simulated';
+  priority?: 'low' | 'medium' | 'high';
+}
+
+export interface WeeklyScheduleItem {
+  day: string;
+  subjects: WeeklyScheduleSubject[];
+}
+
+// Interface for the AI service response
+type AIResponse = {
+  weeklySchedule: Array<{
+    day: string;
+    subjects: Array<{
+      name: string;
+      time: string;
+      duration: number;
+      topic: string;
+    }>;
+  }>;
+  dailyGoals: Array<{
+    goal: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }>;
+  recommendations: Array<{
+    title: string;
+    description: string;
+    type: 'study_method' | 'time_management' | 'content_focus';
+  }>;
+  summary: {
+    totalStudyHours: number;
+    daysUntilTarget: number;
+    subjects: string[];
+    difficulty: string;
+    estimatedPreparationLevel: string;
+  };
+};
+
+// Interface for our internal representation
+export interface InternalStudyPlan {
+  weekly_schedule: Array<{
+    day: string;
+    subjects: Array<{
+      subject: string;
+      time: string;
+      duration: number;
+      topic: string;
+      type: 'study' | 'review' | 'exercise' | 'simulated';
+      priority: 'low' | 'medium' | 'high';
+    }>;
+  }>;
+  daily_goals: Array<{
+    day: string;
+    date: string;
+    goals: string[];
+    total_goals: number;
+    completed_goals: number;
+    priority: 'low' | 'medium' | 'high';
+  }>;
+  revision_suggestions: Array<{
+    subject: string;
+    topic: string;
+    priority: 'low' | 'medium' | 'high';
+    suggested_date: string;
+    type: 'study_method' | 'time_management' | 'content_focus';
+    description: string;
+  }>;
+  exam_suggestions: {
+    exam_type: string;
+    date: string;
+    subjects: string[];
+    preparation_tips: string[];
+    difficulty?: string;
+    estimated_preparation_level?: string;
+  }[];
+}
+
+// Interfaces for daily goals
+export interface DailyGoal {
+  day: string;
+  date: string;
+  goals: Array<{
+    subject: string;
+    description: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }>;
+  total_goals: number;
+  completed_goals: number;
+}
+
+// Interfaces for revision suggestions
+export interface RevisionSuggestion {
+  subject: string;
+  topic: string;
+  priority: 'low' | 'medium' | 'high';
+  suggested_date: string;
+  resources?: string[];
+}
+
+// Interfaces for exam suggestions
+export interface ExamSuggestion {
+  type: 'simulated' | 'revision_test' | 'essay';
+  subject?: string;
+  topics: string[];
+  suggested_date: string;
+  duration: number; // in minutes
+  description: string;
 }
 
 export interface StudyPlanResponse {
@@ -29,11 +156,14 @@ export interface StudyPlanResponse {
   user_id: string;
   name: string;
   description?: string;
-  mode: string;
-  weekly_schedule: any;
-  daily_goals: any;
-  revision_suggestions?: any;
-  exam_suggestions?: any;
+  mode: 'APRU_1b' | 'APRU_REASONING';
+  target_course?: string;
+  target_institution?: string;
+  target_date?: string;
+  weekly_schedule: WeeklyScheduleItem[];
+  daily_goals: DailyGoal[];
+  revision_suggestions?: RevisionSuggestion[];
+  exam_suggestions?: ExamSuggestion[];
   start_date: string;
   end_date: string;
   is_active?: boolean;
@@ -48,10 +178,21 @@ export const studyPlanService = {
     return getDefaultConfig();
   },
 
-  // Gerar um novo plano de estudos usando IA
-  async generatePlan(request: StudyPlanRequest): Promise<StudyPlanResponse> {
+  // Gerar plano apenas com IA (sem salvar no banco)
+  async generatePlanWithAI(request: StudyPlanRequest): Promise<{
+    aiResponse: AIResponse;
+    planData: {
+      targetCourse: string;
+      courseData: Record<string, unknown>;
+      targetInstitution: string;
+      subjects: string[];
+      mainGoal: string;
+      startDate: Date;
+      targetDate: Date;
+    };
+  }> {
     try {
-      console.log('📚 [StudyPlanService] Iniciando geração de plano com IA...', {
+      console.log('🤖 [StudyPlanService] Gerando plano apenas com IA...', {
         mode: request.mode,
         userId: request.userId,
         subjects: request.answers.subjects,
@@ -61,7 +202,7 @@ export const studyPlanService = {
       // Usar IA para gerar o plano personalizado
       const aiResponse = await aiService.generateStudyPlan(request);
       
-      console.log('🤖 [StudyPlanService] IA gerou o plano com sucesso:', {
+      console.log('✅ [StudyPlanService] IA gerou o plano com sucesso:', {
         weeklyScheduleItems: aiResponse.weeklySchedule.length,
         dailyGoalsCount: aiResponse.dailyGoals.length,
         recommendationsCount: aiResponse.recommendations.length
@@ -77,6 +218,39 @@ export const studyPlanService = {
       const targetInstitution = request.answers.targetInstitution || 'Instituição não especificada';
       const mainGoal = request.answers.mainGoal || 'Passar no vestibular';
       
+      return {
+        aiResponse,
+        planData: {
+          targetCourse,
+          courseData,
+          targetInstitution,
+          subjects,
+          mainGoal,
+          startDate,
+          targetDate
+        }
+      };
+    } catch (error) {
+      console.error('❌ [StudyPlanService] Erro ao gerar plano com IA:', error);
+      throw error;
+    }
+  },
+
+  // Salvar plano no banco e integrar com calendário
+  async savePlanToDatabase(
+    request: StudyPlanRequest, 
+    aiResponse: AIResponse,
+    planData: {
+      targetCourse: string;
+      targetInstitution: string;
+      courseData: Record<string, unknown>;
+      subjects: string[];
+      mainGoal: string;
+      startDate: Date;
+      targetDate: Date;
+    }
+  ): Promise<StudyPlanResponse> {
+    try {
       console.log('💾 [StudyPlanService] Salvando plano no banco de dados...');
       
       const { data, error } = await supabase
@@ -84,18 +258,30 @@ export const studyPlanService = {
         .insert([
           {
             user_id: request.userId || 'anonymous',
-            name: `${targetCourse} - ${targetInstitution}`,
-            description: `Plano personalizado para ${targetCourse}${courseData.category ? ` (${courseData.category})` : ''} na ${targetInstitution}. Foco em: ${subjects.join(', ')}. Objetivo: ${mainGoal}`,
+            name: `${planData.targetCourse} - ${planData.targetInstitution}`,
+            description: `Plano personalizado para ${planData.targetCourse}${planData.courseData.category ? ` (${planData.courseData.category})` : ''} na ${planData.targetInstitution}. Foco em: ${planData.subjects.join(', ')}. Objetivo: ${planData.mainGoal}`,
             mode: request.mode,
-            target_course: targetCourse,
-            target_institution: targetInstitution,
-            target_date: targetDate.toISOString().split('T')[0],
+            target_course: planData.targetCourse,
+            target_institution: planData.targetInstitution,
+            target_date: planData.targetDate.toISOString().split('T')[0],
             weekly_schedule: aiResponse.weeklySchedule,
             daily_goals: aiResponse.dailyGoals,
             revision_suggestions: aiResponse.recommendations,
-            exam_suggestions: aiResponse.summary,
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: targetDate.toISOString().split('T')[0],
+            exam_suggestions: [{
+              exam_type: 'Vestibular',
+              date: planData.targetDate.toISOString().split('T')[0],
+              subjects: aiResponse.summary.subjects,
+              preparation_tips: [
+                `Nível de dificuldade: ${aiResponse.summary.difficulty}`,
+                `Nível estimado de preparação: ${aiResponse.summary.estimatedPreparationLevel}`,
+                `Total de horas de estudo: ${aiResponse.summary.totalStudyHours}h`,
+                `Dias até a prova: ${aiResponse.summary.daysUntilTarget}`
+              ],
+              difficulty: aiResponse.summary.difficulty,
+              estimated_preparation_level: aiResponse.summary.estimatedPreparationLevel
+            }],
+            start_date: planData.startDate.toISOString().split('T')[0],
+            end_date: planData.targetDate.toISOString().split('T')[0],
             is_active: true
           }
         ])
@@ -138,6 +324,127 @@ export const studyPlanService = {
       }
       
       return data;
+    } catch (error) {
+      console.error('❌ [StudyPlanService] Erro ao salvar plano:', error);
+      throw error;
+    }
+  },
+
+  // Gerar um novo plano de estudos usando IA (método legado - mantido para compatibilidade)
+  async generatePlan(request: StudyPlanRequest & { 
+    answers: Record<string, unknown> & {
+      targetCourse?: string;
+      targetInstitution?: string;
+      targetCourse_data?: Record<string, unknown>;
+      subjects?: string[];
+      mainGoal?: string;
+      targetDate?: string;
+      hoursPerDay?: number;
+    };
+  }): Promise<StudyPlanResponse> {
+    try {
+      console.log('📚 [StudyPlanService] Iniciando geração de plano com IA...', {
+        mode: request.mode,
+        userId: request.userId,
+        subjects: request.answers.subjects,
+        hoursPerDay: request.answers.hoursPerDay
+      });
+
+      // Usar IA para gerar o plano personalizado
+      const aiResponse = await aiService.generateStudyPlan(request);
+      
+      console.log('🤖 [StudyPlanService] IA gerou o plano com sucesso:', {
+        weeklyScheduleItems: aiResponse.weeklySchedule.length,
+        dailyGoalsCount: aiResponse.dailyGoals.length,
+        recommendationsCount: aiResponse.recommendations.length
+      });
+      
+      // Calcular datas baseado nas respostas
+      const startDate = new Date();
+      const targetDate = request.answers.targetDate ? new Date(request.answers.targetDate) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+      
+      const subjects = Array.isArray(request.answers.subjects) ? request.answers.subjects : [];
+      const targetCourse = request.answers.targetCourse || 'Curso não especificado';
+      const courseData = request.answers.targetCourse_data || {};
+      const targetInstitution = request.answers.targetInstitution || 'Instituição não especificada';
+      const mainGoal = request.answers.mainGoal || 'Passar no vestibular';
+      
+      const formattedPlan = [] as WeeklyScheduleItem[];
+      
+      const data = {
+        id: 'temp-id',
+        user_id: request.userId,
+        name: `Plano de Estudos - ${targetCourse}`,
+        description: `Plano de estudos para ${targetCourse} na ${targetInstitution}`,
+        mode: request.mode,
+        target_course: targetCourse,
+        target_institution: targetInstitution,
+        target_date: targetDate.toISOString().split('T')[0],
+        weekly_schedule: formattedPlan,
+        daily_goals: aiResponse.dailyGoals,
+        revision_suggestions: aiResponse.recommendations,
+        exam_suggestions: [{
+          exam_type: 'Vestibular',
+          date: targetDate.toISOString().split('T')[0],
+          subjects: aiResponse.summary.subjects,
+          preparation_tips: [
+            `Nível de dificuldade: ${aiResponse.summary.difficulty}`,
+            `Nível estimado de preparação: ${aiResponse.summary.estimatedPreparationLevel}`,
+            `Total de horas de estudo: ${aiResponse.summary.totalStudyHours}h`,
+            `Dias até a prova: ${aiResponse.summary.daysUntilTarget}`
+          ],
+          difficulty: aiResponse.summary.difficulty,
+          estimated_preparation_level: aiResponse.summary.estimatedPreparationLevel
+        }],
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: targetDate.toISOString().split('T')[0],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data: savedData, error } = await supabase
+        .from('study_plans')
+        .insert([data])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('❌ [StudyPlanService] Erro ao salvar no banco:', error);
+        throw error;
+      }
+      
+      console.log('✅ [StudyPlanService] Plano salvo com sucesso no banco de dados');
+      
+      // Integrar automaticamente com o calendário
+      try {
+        console.log('📅 [StudyPlanService] Verificando se tabela calendar_events existe...');
+        
+        // Verificar se a tabela existe antes de tentar criar eventos
+        const tableExists = await calendarService.checkTableExists();
+        
+        if (!tableExists) {
+          console.warn('⚠️ [StudyPlanService] Tabela calendar_events não existe. Pulando integração com calendário.');
+          return savedData;
+        }
+        
+        console.log('📅 [StudyPlanService] Integrando plano com o calendário...');
+        
+        await calendarService.createEventsFromStudyPlan({
+          study_plan_id: savedData.id,
+          user_id: savedData.user_id,
+          weekly_schedule: aiResponse.weeklySchedule,
+          start_date: savedData.start_date,
+          end_date: savedData.end_date
+        });
+        
+        console.log('✅ [StudyPlanService] Plano integrado com o calendário com sucesso!');
+      } catch (calendarError) {
+        console.error('⚠️ [StudyPlanService] Erro ao integrar com calendário (não crítico):', calendarError);
+        // Não falhar o processo principal se a integração com calendário falhar
+      }
+      
+      return savedData;
     } catch (error) {
       console.error('❌ [StudyPlanService] Erro ao gerar plano de estudos:', error);
       throw new Error('Não foi possível gerar o plano de estudos');
@@ -267,4 +574,111 @@ function getDefaultConfig(): StudyPlanConfig {
       }
     ]
   };
+}
+
+async function generateStudyPlanWithAI(
+  userId: string,
+  answers: Record<string, string | object>,
+  mode: 'APRU_1b' | 'APRU_REASONING'
+): Promise<StudyPlanResponse> {
+  try {
+    console.log('Generating study plan with AI for user:', userId);
+    console.log('Mode:', mode);
+    console.log('Answers:', answers);
+    
+    // Extract data from answers, ensuring string type
+    const description = typeof answers.description === 'string' ? answers.description : '';
+    const targetCourse = typeof answers.targetCourse === 'string' ? answers.targetCourse : '';
+    const targetInstitution = typeof answers.targetInstitution === 'string' ? answers.targetInstitution : '';
+    const targetDate = typeof answers.targetDate === 'string' ? answers.targetDate : '';
+    
+    // Placeholder for formatted plan, ensuring it matches WeeklyScheduleItem[]
+    const formattedPlan: WeeklyScheduleItem[] = [];
+    
+    // Return a dummy response for now, matching StudyPlanResponse interface
+    return {
+      id: 'temp-id',
+      name: 'AI Generated Study Plan',
+      description: description,
+      mode: mode,
+      target_course: targetCourse,
+      target_institution: targetInstitution,
+      target_date: targetDate,
+      weekly_schedule: formattedPlan,
+      daily_goals: [],
+      revision_suggestions: [],
+      exam_suggestions: [],
+      start_date: new Date().toISOString(),
+      end_date: new Date().toISOString(),
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  } catch (err) {
+    console.error('Error generating study plan with AI:', err);
+    throw err;
+  }
+}
+
+async function saveStudyPlan(
+  userId: string,
+  plan: StudyPlanResponse
+): Promise<StudyPlanResponse> {
+  try {
+    const { data, error } = await supabase
+      .from('study_plans')
+      .insert([plan])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error saving study plan:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error in saveStudyPlan:', err);
+    throw err;
+  }
+}
+
+async function getUserPlans(userId: string): Promise<StudyPlanResponse[]> {
+  try {
+    const { data, error } = await supabase
+      .from('study_plans')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user plans:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('Error in getUserPlans:', err);
+    return [];
+  }
+}
+
+async function updatePlan(planId: string, updates: Partial<StudyPlanResponse>): Promise<StudyPlanResponse> {
+  try {
+    const { data, error } = await supabase
+      .from('study_plans')
+      .update(updates)
+      .eq('id', planId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating plan:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error in updatePlan:', err);
+    throw err;
+  }
 }

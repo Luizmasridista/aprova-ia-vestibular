@@ -1,0 +1,73 @@
+@layer components {
+  /* Botão Primário */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground 
+           hover:from-primary/90 hover:to-primary-glow/90 
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out
+           shadow-md hover:shadow-lg;
+  }
+
+  /* Botão Secundário */
+  .btn-secondary {
+    @apply bg-accent text-accent-foreground 
+           hover:bg-accent/90 hover:text-white
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out
+           shadow-sm hover:shadow;
+  }
+
+  /* Botão de Sucesso */
+  .btn-success {
+    @apply bg-success text-white 
+           hover:bg-success/90 
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out;
+  }
+
+  /* Botão Destrutivo */
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground 
+           hover:bg-destructive/90 
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out;
+  }
+
+  /* Botão Outline */
+  .btn-outline {
+    @apply border border-input bg-transparent hover:bg-accent/10 hover:text-accent-foreground
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out;
+  }
+
+  /* Botão Ghost */
+  .btn-ghost {
+    @apply hover:bg-accent/10 hover:text-accent-foreground
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-200 ease-in-out;
+  }
+
+  /* Estilo para ícones */
+  .icon-primary {
+    @apply text-primary;
+  }
+
+  .icon-accent {
+    @apply text-accent;
+  }
+
+  .icon-muted {
+    @apply text-muted-foreground/70;
+  }
+
+  /* Efeito de hover para ícones */
+  .icon-hover-effect {
+    @apply transition-colors duration-200 hover:text-accent cursor-pointer;
+  }
+}
