@@ -140,6 +140,8 @@ button, [type='button'], [type='reset'], [type='submit'] {
   overflow: visible;
 }
 
+/* CSS limpo - ScrollStack removido */
+
 /* Animações suaves para itens do menu */
 .sidebar-item {
   transition: all 200ms ease-in-out;
