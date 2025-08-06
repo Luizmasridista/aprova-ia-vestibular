@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, LogOut } from 'lucide-react';
+import { User as UserIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -33,9 +33,7 @@ export function UserFooter({
   const userEmail = user?.email || '';
 
   const handleProfileClick = () => {
-    const profileUrl = '/perfil';
-    navigate(profileUrl);
-    handleLinkClick(profileUrl);
+    navigate('/perfil');
   };
 
   // Render compacto (sidebar recolhida)
@@ -76,7 +74,7 @@ export function UserFooter({
                 className="w-8 h-8 p-0"
                 onClick={handleProfileClick}
               >
-                <Settings className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>
@@ -138,7 +136,7 @@ export function UserFooter({
             className="flex-1"
             onClick={handleProfileClick}
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <UserIcon className="h-4 w-4 mr-2" />
             Perfil
           </Button>
 

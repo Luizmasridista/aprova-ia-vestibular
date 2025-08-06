@@ -24,18 +24,22 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({
   // Check if text overflows its container
   const checkOverflow = useCallback(() => {
     if (containerRef.current && textRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const textWidth = textRef.current.scrollWidth;
-      const isOverflowing = textWidth > containerWidth;
+      const newContainerWidth = containerRef.current.offsetWidth;
+      const newTextWidth = textRef.current.scrollWidth;
+      const isOverflowing = newTextWidth > newContainerWidth;
       
-      if (isOverflowing) {
-        setTextWidth(textWidth);
-        setContainerWidth(containerWidth);
+      // Only update state if values have actually changed to prevent ResizeObserver loops
+      if (isOverflowing && (newTextWidth !== textWidth || newContainerWidth !== containerWidth)) {
+        setTextWidth(newTextWidth);
+        setContainerWidth(newContainerWidth);
       }
       
-      setNeedsMarquee(isOverflowing);
+      // Only update needsMarquee if it has actually changed
+      if (needsMarquee !== isOverflowing) {
+        setNeedsMarquee(isOverflowing);
+      }
     }
-  }, []);
+  }, [textWidth, containerWidth, needsMarquee]);
 
   // Handle animation frame
   const animate = useCallback(() => {
@@ -73,7 +77,15 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({
   useEffect(() => {
     checkOverflow();
     
-    const resizeObserver = new ResizeObserver(checkOverflow);
+    let resizeTimeout: number;
+    const debouncedCheckOverflow = () => {
+      if (resizeTimeout) {
+        cancelAnimationFrame(resizeTimeout);
+      }
+      resizeTimeout = requestAnimationFrame(checkOverflow);
+    };
+    
+    const resizeObserver = new ResizeObserver(debouncedCheckOverflow);
     const currentContainer = containerRef.current;
     
     if (currentContainer) {
@@ -81,6 +93,9 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({
     }
 
     return () => {
+      if (resizeTimeout) {
+        cancelAnimationFrame(resizeTimeout);
+      }
       if (currentContainer) {
         resizeObserver.unobserve(currentContainer);
       }

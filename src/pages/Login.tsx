@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import GradientText from '../components/ui/GradientText';
 import AnimatedText from '../components/ui/AnimatedText';
+import Stack from '@/components/ui/Stack';
 import { 
   Brain, 
   Calendar, 
@@ -58,6 +59,7 @@ const itemVariants = {
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showSignupForm, setShowSignupForm] = useState(false);
 
   // Verifica se o usuário já está autenticado
   useEffect(() => {
@@ -102,23 +104,31 @@ export default function LoginPage() {
     }
   ];
 
-  if (showLoginForm) {
+  if (showLoginForm || showSignupForm) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+          <button
+            onClick={() => {
+              setShowLoginForm(false);
+              setShowSignupForm(false);
+            }}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
           <div className="p-8">
             <div className="flex justify-center mb-8">
               <img 
                 src="/LOGO-NOVA-APROVA.png" 
                 alt="APROVA.AE" 
-                className="h-24-auto"
+                className="h-25"
               />
             </div>
 
-
-            
-            
-            <LoginForm />
+            <LoginForm initialMode={showSignupForm ? 'signup' : 'login'} />
             
             <div className="mt-6">
               <div className="relative">
@@ -221,12 +231,21 @@ export default function LoginPage() {
               Planos
             </a>
           </nav>
-          <Button 
-            onClick={() => setShowLoginForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors ml-8"
-          >
-            Experimente Grátis
-          </Button>
+          <div className="flex items-center space-x-4 ml-8">
+            <Button 
+              onClick={() => setShowLoginForm(true)}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Entrar
+            </Button>
+            <Button 
+              onClick={() => setShowSignupForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Experimente Grátis
+            </Button>
+          </div>
         </motion.div>
 
         {/* Hero Content */}
@@ -809,7 +828,59 @@ export default function LoginPage() {
             </motion.p>
           </motion.div>
 
-          {/* Seção removida - ScrollStack será recriado */}
+          {/* Stack de Agentes de IA */}
+          <motion.div 
+            className="flex justify-center items-center"
+            variants={itemVariants}
+          >
+            <Stack
+              randomRotation={true}
+              sensitivity={150}
+              cardDimensions={{ width: 320, height: 400 }}
+              sendToBackOnClick={true}
+              animationConfig={{ stiffness: 300, damping: 25 }}
+              cardsData={[
+                 {
+                   id: 1,
+                   img: "/LOGO-NOVA-APROVA.png",
+                   title: "APRU 1b",
+                   description: "Assistente de IA rápido e eficiente para respostas instantâneas e análise de questões do vestibular.",
+                   features: ["Respostas em tempo real", "Análise de questões", "Dicas personalizadas", "Correção automática"]
+                 },
+                 {
+                   id: 2,
+                   img: "/LOGO-NOVA-APROVA.png",
+                   title: "APRU REASONING",
+                   description: "IA avançada com raciocínio profundo para análises complexas e resolução detalhada de problemas.",
+                   features: ["Raciocínio avançado", "Explicações detalhadas", "Resolução passo a passo", "Análise crítica"]
+                 },
+                 {
+                   id: 3,
+                   img: "/LOGO-NOVA-APROVA.png",
+                   title: "APRU CALENDAR",
+                   description: "Assistente especializado em organização e planejamento inteligente de estudos para vestibular.",
+                   features: ["Planejamento inteligente", "Lembretes automáticos", "Otimização de tempo", "Cronograma adaptativo"]
+                 },
+                 {
+                   id: 4,
+                   img: "/LOGO-NOVA-APROVA.png",
+                   title: "APRU EXERCISE",
+                   description: "Gerador de exercícios personalizados com base no seu desempenho e áreas de dificuldade.",
+                   features: ["Exercícios adaptativos", "Correção automática", "Feedback inteligente", "Progressão personalizada"]
+                 },
+               ]}
+            />
+          </motion.div>
+          
+          {/* Instruções de Interação */}
+          <motion.div 
+            className="text-center mt-8"
+            variants={itemVariants}
+          >
+            <p className="text-gray-300 text-sm">
+              💡 <strong>Arraste</strong> ou <strong>clique</strong> nos cards para explorar nossos agentes de IA
+            </p>
+          </motion.div>
         </div>
       </motion.section>
 
@@ -837,55 +908,211 @@ export default function LoginPage() {
             </motion.p>
           </motion.div>
           
+          {/* Hero Stats with Interactive Elements */}
           <motion.div 
-            className="text-center mb-16"
+            className="relative mb-20"
             variants={itemVariants}
           >
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-green-600/5 rounded-3xl blur-3xl"></div>
+            
+            {/* Main Stat Display */}
             <motion.div 
-              className="text-6xl font-bold text-blue-600 mb-2"
-              variants={itemVariants}
+              className="relative text-center mb-12 p-8 bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 shadow-2xl"
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              85%
+              <motion.div 
+                className="text-8xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 bg-clip-text text-transparent mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                whileInView={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
+                whileHover={{ 
+                  scale: 1.1,
+                  textShadow: "0 0 20px rgba(59, 130, 246, 0.5)"
+                }}
+              >
+                85%
+              </motion.div>
+              
+              <motion.div 
+                className="relative"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <p className="text-xl text-gray-700 font-medium mb-2">
+                  dos nossos alunos passaram no vestibular
+                </p>
+                <motion.div 
+                  className="w-32 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: 128 }}
+                  transition={{ delay: 0.7, duration: 1 }}
+                ></motion.div>
+              </motion.div>
+              
+              {/* Floating Elements */}
+              <motion.div 
+                className="absolute -top-4 -right-4 w-8 h-8 bg-yellow-400 rounded-full shadow-lg"
+                animate={{ 
+                  y: [-10, 10, -10],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              ></motion.div>
+              
+              <motion.div 
+                className="absolute -bottom-4 -left-4 w-6 h-6 bg-green-400 rounded-full shadow-lg"
+                animate={{ 
+                  y: [10, -10, 10],
+                  x: [-5, 5, -5]
+                }}
+                transition={{ 
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              ></motion.div>
             </motion.div>
-            <motion.p 
-              className="text-gray-600"
-              variants={itemVariants}
-            >
-              dos nossos alunos passaram no vestibular
-            </motion.p>
           </motion.div>
           
+          {/* Enhanced Stats Grid */}
           <motion.div 
-            className="grid md:grid-cols-3 gap-8 text-center"
+            className="grid md:grid-cols-3 gap-8"
             variants={{
               visible: {
                 transition: {
-                  staggerChildren: 0.2
+                  staggerChildren: 0.15
                 }
               }
             }}
           >
-            <motion.div variants={itemVariants}>
-              <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">10.000+</h3>
-              <p className="text-gray-600">Estudantes ativos</p>
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">50.000+</h3>
-              <p className="text-gray-600">Questões resolvidas</p>
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <div className="bg-purple-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">95%</h3>
-              <p className="text-gray-600">Taxa de satisfação</p>
-            </motion.div>
+            {[
+              {
+                icon: Users,
+                number: "10.000+",
+                label: "Estudantes ativos",
+                description: "Comunidade ativa de estudantes focados na aprovação",
+                gradient: "from-blue-500 to-blue-600",
+                bgGradient: "from-blue-50 to-blue-100",
+                delay: 0
+              },
+              {
+                icon: BookOpen,
+                number: "50.000+",
+                label: "Questões resolvidas",
+                description: "Base completa com questões de todos os vestibulares",
+                gradient: "from-green-500 to-green-600",
+                bgGradient: "from-green-50 to-green-100",
+                delay: 0.1
+              },
+              {
+                icon: Target,
+                number: "95%",
+                label: "Taxa de satisfação",
+                description: "Aprovação comprovada pelos nossos estudantes",
+                gradient: "from-purple-500 to-purple-600",
+                bgGradient: "from-purple-50 to-purple-100",
+                delay: 0.2
+              }
+            ].map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <motion.div 
+                  key={index}
+                  variants={itemVariants}
+                  className="group"
+                >
+                  <motion.div 
+                    className={`relative p-8 bg-gradient-to-br ${stat.bgGradient} rounded-3xl border border-gray-200/50 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden`}
+                    whileHover={{ 
+                      scale: 1.05, 
+                      y: -10,
+                      rotateY: 5
+                    }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-white to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+                    </div>
+                    
+                    {/* Icon */}
+                    <motion.div 
+                      className={`relative w-20 h-20 bg-gradient-to-r ${stat.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl`}
+                      whileHover={{ 
+                        rotate: 360,
+                        scale: 1.1
+                      }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <IconComponent className="w-10 h-10 text-white" />
+                      
+                      {/* Glow Effect */}
+                      <motion.div 
+                        className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-50`}
+                        transition={{ duration: 0.3 }}
+                      ></motion.div>
+                    </motion.div>
+                    
+                    {/* Number */}
+                    <motion.h3 
+                      className={`text-4xl font-black bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent mb-3 text-center`}
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 200, 
+                        delay: stat.delay + 0.3 
+                      }}
+                    >
+                      {stat.number}
+                    </motion.h3>
+                    
+                    {/* Label */}
+                    <p className="text-lg font-bold text-gray-800 mb-2 text-center">
+                      {stat.label}
+                    </p>
+                    
+                    {/* Description */}
+                    <motion.p 
+                      className="text-sm text-gray-600 text-center leading-relaxed"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: stat.delay + 0.5 }}
+                    >
+                      {stat.description}
+                    </motion.p>
+                    
+                    {/* Progress Bar */}
+                    <motion.div 
+                      className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ delay: stat.delay + 0.7 }}
+                    >
+                      <motion.div 
+                        className={`h-full bg-gradient-to-r ${stat.gradient} rounded-full`}
+                        initial={{ width: "0%" }}
+                        whileInView={{ width: "85%" }}
+                        transition={{ 
+                          delay: stat.delay + 0.8, 
+                          duration: 1.5,
+                          ease: "easeOut"
+                        }}
+                      ></motion.div>
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </motion.section>

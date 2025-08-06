@@ -1,0 +1,35 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo circular com gradiente laranja/vermelho -->
+  <circle cx="32" cy="32" r="30" fill="url(#gradientExercise)" stroke="#dc2626" stroke-width="2"/>
+  
+  <!-- Livro/caderno de exercícios -->
+  <rect x="22" y="20" width="20" height="24" rx="2" fill="white" opacity="0.9" stroke="#dc2626" stroke-width="1.5"/>
+  
+  <!-- Linhas do caderno -->
+  <line x1="25" y1="26" x2="39" y2="26" stroke="#dc2626" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="30" x2="39" y2="30" stroke="#dc2626" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="34" x2="35" y2="34" stroke="#dc2626" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="38" x2="37" y2="38" stroke="#dc2626" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Checkmark/correção -->
+  <path d="M27 32 L30 35 L37 28" stroke="#dc2626" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Lápis -->
+  <rect x="40" y="18" width="2" height="12" rx="1" fill="#fbbf24" transform="rotate(45 41 24)"/>
+  <polygon points="44,20 46,22 44,24 42,22" fill="#dc2626" transform="rotate(45 44 22)"/>
+  
+  <!-- Estrela de conquista -->
+  <path d="M32 16 L33 19 L36 19 L34 21 L35 24 L32 22 L29 24 L30 21 L28 19 L31 19 Z" 
+        fill="#fbbf24" stroke="#dc2626" stroke-width="0.5"/>
+  
+  <!-- Texto "EX" -->
+  <text x="32" y="54" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="7" font-weight="bold">EX</text>
+  
+  <!-- Gradiente -->
+  <defs>
+    <linearGradient id="gradientExercise" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

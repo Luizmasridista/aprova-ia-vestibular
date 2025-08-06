@@ -5,13 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import MyStudyPlans from '@/components/profile/MyStudyPlans';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function ProfilePage() {
-  const { user, updateProfile, updatePassword } = useAuth();
+  const { user, updateProfile, updatePassword, deleteAccount } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.user_metadata?.full_name || '',
     email: user?.email || '',
@@ -37,6 +49,40 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const { error } = await deleteAccount();
+      
+      if (error) {
+        toast({
+          title: 'Erro ao excluir conta',
+          description: error.message || 'Ocorreu um erro inesperado. Tente novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      toast({
+        title: 'Conta excluída com sucesso',
+        description: 'Sua conta e todos os dados foram permanentemente removidos.',
+        variant: 'default',
+      });
+      
+      // O redirecionamento será feito automaticamente pelo hook useAuth
+    } catch (error) {
+      console.error('Erro ao excluir conta:', error);
+      toast({
+        title: 'Erro ao excluir conta',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -257,9 +303,52 @@ export default function ProfilePage() {
                     Esta ação é irreversível. Todos os seus dados serão permanentemente removidos.
                   </p>
                 </div>
-                <Button variant="destructive">
-                  Excluir Conta
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isDeleting}>
+                      {isDeleting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Excluindo...
+                        </>
+                      ) : (
+                        'Excluir Conta'
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Confirmar Exclusão de Conta
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <div>
+                          <strong>Esta ação é irreversível!</strong> Ao confirmar, todos os seus dados serão permanentemente excluídos:
+                        </div>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          <li>Histórico de exercícios e resultados</li>
+                          <li>Eventos do calendário</li>
+                          <li>Planos de estudo</li>
+                          <li>Configurações de perfil</li>
+                          <li>Conta de usuário</li>
+                        </ul>
+                        <div className="text-sm font-medium">
+                          Tem certeza de que deseja continuar?
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Sim, Excluir Conta
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CardContent>

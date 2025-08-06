@@ -46,11 +46,12 @@ export function AppSidebar({ className, defaultCollapsed = false }: AppSidebarPr
     updateSidebarWidth(isExpanded);
 
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
+      const isMobileNow = window.innerWidth < 768;
+      setIsMobile(isMobileNow);
+      
+      // Apenas fechar automaticamente em mobile, não forçar abertura em desktop
+      if (isMobileNow && isExpanded) {
         setIsExpanded(false);
-      } else if (!defaultCollapsed) {
-        setIsExpanded(true);
       }
     };
 
@@ -60,7 +61,7 @@ export function AppSidebar({ className, defaultCollapsed = false }: AppSidebarPr
     return () => {
       window.removeEventListener('resize', checkMobile);
     };
-  }, [defaultCollapsed]);
+  }, [isExpanded]);
 
   // Fechar menu mobile após navegação
   const handleLinkClick = (url: string) => {
@@ -171,9 +172,9 @@ export function AppSidebar({ className, defaultCollapsed = false }: AppSidebarPr
                   className="flex items-center justify-center w-full"
                 >
                   <img 
-                    src="/LOGO-COM NOME-APROVA.AE.png" 
+                    src="/LOGO-NOVA-APROVA.png" 
                     alt="APROVA.AE" 
-                    className="h-12 w-auto max-w-[160px] object-contain"
+                    className="h-40 w-auto max-w-[400px] object-contain"
                     style={{ objectFit: 'contain' }}
                   />
                 </motion.div>
@@ -186,7 +187,7 @@ export function AppSidebar({ className, defaultCollapsed = false }: AppSidebarPr
                 >
                   <div className="w-24 h-24 flex items-center justify-center">
                     <img 
-                      src="/Logo.AAPROVE.AE.png" 
+                      src="/LOGO-CURTA-APROVA.png" 
                       alt="APROVA.AE" 
                       className="w-full h-full object-contain"
                       style={{ objectFit: 'contain' }}

@@ -313,6 +313,7 @@ export const useDashboardData = (): DashboardData => {
       }
 
       // Buscar exercícios realizados
+      console.log('🔍 [Dashboard] Buscando exercícios para usuário:', user.id);
       const { data: exerciseResults, error: exercisesError } = await supabase
         .from('exercise_results')
         .select(`
@@ -326,8 +327,11 @@ export const useDashboardData = (): DashboardData => {
         `)
         .eq('user_id', user.id);
 
+      console.log('📊 [Dashboard] Exercícios encontrados:', exerciseResults?.length || 0);
+      console.log('📊 [Dashboard] Dados dos exercícios:', exerciseResults);
+
       if (exercisesError) {
-        console.error('Erro ao buscar exercícios:', exercisesError);
+        console.error('❌ [Dashboard] Erro ao buscar exercícios:', exercisesError);
         // Não falhar se exercícios não existirem, apenas continuar
       }
 
@@ -470,6 +474,9 @@ export const useDashboardData = (): DashboardData => {
         total: stats.total,
         percentage: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
       })).sort((a, b) => b.percentage - a.percentage);
+
+      console.log('📈 [Dashboard] Subject Stats:', subjectStats);
+      console.log('📈 [Dashboard] Subject Progress:', subjectProgress);
 
       // Atividade recente (incluindo exercícios)
       const recentActivity = [
