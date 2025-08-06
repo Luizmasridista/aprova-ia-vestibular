@@ -199,16 +199,14 @@ const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[
   });
 
   exerciseResults.forEach(result => {
-    const subject = result.subject;
-    if (subject) {
-       if (!progress[subject]) {
-        progress[subject] = { completed: 0, total: 0, correct: 0, wrong: 0 };
-      }
-      if (result.is_correct) {
-        progress[subject].correct++;
-      } else {
-        progress[subject].wrong++;
-      }
+    const subject = 'Exercícios'; // Como não há subject nos exercícios, usamos um padrão
+    if (!progress[subject]) {
+      progress[subject] = { completed: 0, total: 0, correct: 0, wrong: 0 };
+    }
+    if (result.is_correct) {
+      progress[subject].correct++;
+    } else {
+      progress[subject].wrong++;
     }
   });
 
@@ -418,7 +416,7 @@ export const useDashboardData = (): DashboardData => {
         ...event,
         completed: !!event.completed_at
       })) as CalendarEvent[];
-      const exerciseResults = (exerciseResultsData.data || []) as ExerciseResult[];
+const exerciseResults = (exerciseResultsData.data || []) as ExerciseResult[];
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
