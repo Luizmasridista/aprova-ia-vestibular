@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, TrendingUp, Award } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { BookOpen, TrendingUp, Award, PieChart } from 'lucide-react';
+import { DonutChart } from '../charts/DonutChart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SubjectSunburstChart } from './SubjectSunburstChart';
 
 interface SubjectProgressProps {
   subjectProgress: {
@@ -9,6 +12,9 @@ interface SubjectProgressProps {
     completed: number;
     total: number;
     percentage: number;
+    correct?: number;
+    wrong?: number;
+    notAttempted?: number;
   }[];
   isLoading?: boolean;
 }
@@ -71,27 +77,113 @@ export const SubjectProgress: React.FC<SubjectProgressProps> = ({
     );
   }
 
-  if (subjectProgress.length === 0) {
+  // Use real exercise session data from props
+  const sessionExercises = {
+    completed: subjectProgress.reduce((sum, subject) => sum + (subject.completed || 0), 0),
+    total: subjectProgress.reduce((sum, subject) => sum + (subject.total || 0), 0) || 1,
+    subject: subjectProgress[0]?.subject || 'Geral'
+  };
+  
+  const sessionPercentage = Math.round((sessionExercises.completed / sessionExercises.total) * 100) || 0;
+
+  if (subjectProgress.length === 0 || !sessionExercises.total) {
     return (
       <Card className="border-0 bg-white/50 backdrop-blur-sm shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-blue-600" />
-            Progresso por Matéria
+            Nenhum Exercício Iniciado
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium mb-2">Nenhuma atividade registrada</p>
-            <p className="text-sm text-gray-400">
-              Complete algumas atividades para ver seu progresso por matéria
+          <div className="flex flex-col items-center py-4">
+            <div className="relative w-48 h-48 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-400">0/0</div>
+                <div className="text-xs text-gray-400 mt-1">Exercícios</div>
+              </div>
+            </div>
+            <p className="text-gray-500 font-medium mt-4">
+              Comece a resolver exercícios!
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              Complete exercícios para ver seu progresso
             </p>
           </div>
         </CardContent>
       </Card>
     );
   }
+
+  const donutData = [
+    {
+      label: 'Concluídos',
+      value: sessionExercises.completed,
+      color: '#4f46e5', // indigo-600
+      count: sessionExercises.completed
+    },
+    {
+      label: 'Restantes',
+      value: sessionExercises.total - sessionExercises.completed,
+      color: '#e0e7ff', // indigo-100
+      count: sessionExercises.total - sessionExercises.completed
+    }
+  ];
+
+  const centerContent = (
+    <div className="text-center">
+      <div className="text-2xl font-bold text-gray-900">
+        {sessionExercises.completed}/{sessionExercises.total}
+      </div>
+      <div className="text-xs text-gray-500 mt-1">
+        Exercícios
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="border-0 bg-white/50 backdrop-blur-sm shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <BookOpen className="h-5 w-5 text-blue-600" />
+          Progresso em {sessionExercises.subject}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center py-4">
+          <div className="relative w-48 h-48">
+            <DonutChart 
+              data={donutData} 
+              size={180}
+              strokeWidth={16}
+              centerContent={centerContent}
+            />
+          </div>
+          <p className="text-gray-500 font-medium mt-4">
+            {sessionPercentage >= 80 
+              ? 'Excelente progresso! 🎉' 
+              : sessionPercentage >= 50
+                ? 'Continue assim! 💪' 
+                : 'Você está começando! ✨'}
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            {sessionExercises.completed === 0 
+              ? 'Comece a resolver exercícios!' 
+              : `${sessionExercises.total - sessionExercises.completed} exercícios restantes`}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Prepare data for the sunburst chart
+  const sunburstData = subjectProgress.map(subject => ({
+    subject: subject.subject,
+    correct: subject.correct || 0,
+    wrong: subject.wrong || 0,
+    notAttempted: (subject.total - (subject.completed || 0)) || 0,
+    percentage: subject.percentage || 0
+  }));
 
   return (
     <Card className="border-0 bg-white/50 backdrop-blur-sm shadow-sm">
@@ -101,8 +193,21 @@ export const SubjectProgress: React.FC<SubjectProgressProps> = ({
           Progresso por Matéria
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {subjectProgress.slice(0, 6).map((subject, index) => {
+      <Tabs defaultValue="list" className="w-full">
+        <div className="px-6 pt-2">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="list" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Lista
+            </TabsTrigger>
+            <TabsTrigger value="chart" className="flex items-center gap-2">
+              <PieChart className="h-4 w-4" /> Gráfico
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        
+        <TabsContent value="list" className="px-6 pb-6">
+          <div className="space-y-4">
+            {subjectProgress.slice(0, 6).map((subject, index) => {
           const colors = getSubjectColor(subject.subject, index);
           const icon = getSubjectIcon(subject.subject);
           
@@ -171,9 +276,19 @@ export const SubjectProgress: React.FC<SubjectProgressProps> = ({
               )}
             </motion.div>
           );
-        })}
+            })}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="chart" className="px-6 pb-6">
+          <div className="h-80 mt-2">
+            <SubjectSunburstChart exerciseData={sunburstData} />
+          </div>
+        </TabsContent>
+      </Tabs>
 
-        {/* Insights */}
+      {/* Insights */}
+      <CardFooter className="pt-0">
         {subjectProgress.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -205,7 +320,7 @@ export const SubjectProgress: React.FC<SubjectProgressProps> = ({
             </div>
           </motion.div>
         )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };
