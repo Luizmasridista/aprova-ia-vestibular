@@ -278,7 +278,7 @@ export const useDashboardData = (): DashboardData => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (): Promise<void> => {
     if (!user?.id) {
       console.log('🚫 [Dashboard] Usuário não logado');
       setIsLoading(false);
@@ -444,39 +444,58 @@ export const useDashboardData = (): DashboardData => {
       }).length;
 
       // Progresso por matéria (incluindo eventos e exercícios)
-      const subjectStats = typedEvents.reduce((acc, event) => {
-        const subject = event.subject || 'Outros';
+      // --- Subject stats based solely on calendar events ---
+      const calendarSubjectStats = typedEvents.reduce((acc: Record<string, { completed: number; total: number }>, result: any) => {
+        const subject = result.subject || 'Outros';
         if (!acc[subject]) {
           acc[subject] = { completed: 0, total: 0 };
         }
         acc[subject].total++;
-        if (event.completed) {
+        if (result.completed) {
           acc[subject].completed++;
         }
         return acc;
       }, {} as Record<string, { completed: number; total: number }>);
 
-      // Adicionar exercícios às estatísticas por matéria
-      typedExerciseResults.forEach(result => {
+      // --- Subject stats based solely on exercises (answered, correct or not) ---
+      const exerciseSubjectStats = typedExerciseResults.reduce((acc: Record<string, { completed: number; total: number }>, result: any) => {
         const subject = result.exercise_sessions.subject || 'Outros';
-        if (!subjectStats[subject]) {
-          subjectStats[subject] = { completed: 0, total: 0 };
-        }
-        subjectStats[subject].total++;
-        if (result.is_correct) {
-          subjectStats[subject].completed++;
-        }
-      });
+        if (!acc[subject]) acc[subject] = { completed: 0, total: 0 };
+        acc[subject].total++;
+        acc[subject].completed++; // count every exercise performed
+        return acc;
+      }, {} as Record<string, { completed: number; total: number }>);
 
-      const subjectProgress = Object.entries(subjectStats).map(([subject, stats]: [string, { completed: number; total: number }]) => ({
+      const exerciseSubjectProgress = Object.entries(exerciseSubjectStats).map(([subject, stats]) => ({
+        subject,
+        completed: stats.completed,
+        total: stats.total,
+        percentage: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
+      })).sort((a,b)=> b.completed - a.completed);
+
+      const subjectStats = typedExerciseResults.reduce((acc: Record<string, { completed: number; total: number }>, result: any) => {
+        const subject = result.exercise_sessions.subject || 'Outros';
+        if (!acc[subject]) {
+          acc[subject] = { completed: 0, total: 0 };
+        }
+        acc[subject].total++;
+        if (result.is_correct) {
+          acc[subject].completed++;
+        }
+        return acc;
+      }, {} as Record<string, { completed: number; total: number }>);
+
+      const subjectProgress = Object.entries(calendarSubjectStats).map(([subject, stats]: [string, { completed: number; total: number }]) => ({
         subject,
         completed: stats.completed,
         total: stats.total,
         percentage: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
       })).sort((a, b) => b.percentage - a.percentage);
 
-      console.log('📈 [Dashboard] Subject Stats:', subjectStats);
+      console.log('📈 [Dashboard] Calendar Subject Stats:', calendarSubjectStats);
+      console.log('📈 [Dashboard] Exercise Subject Stats:', exerciseSubjectStats);
       console.log('📈 [Dashboard] Subject Progress:', subjectProgress);
+      console.log('📈 [Dashboard] Exercise Subject Progress:', exerciseSubjectProgress);
 
       // Atividade recente (incluindo exercícios)
       const recentActivity = [
@@ -560,6 +579,7 @@ export const useDashboardData = (): DashboardData => {
         weeklyGoal: 10, // Valor padrão ou lógica para calcular meta semanal
         weeklyProgress: weeklyEvents,
         subjectProgress,
+        exerciseSubjectProgress,
         recentActivity,
         monthlyGoals: monthlyGoalsConfig
       };
@@ -586,16 +606,16 @@ export const useDashboardData = (): DashboardData => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
-
+  
   return {
     stats,
     isLoading,
     error,
-    refresh: fetchDashboardData
+    refresh: fetchDashboardData as () => Promise<void>
   };
 };

@@ -87,6 +87,40 @@ export function LoginForm({ initialMode = 'login' }: LoginFormProps) {
     setIsLoading(true);
     setMessage('');
 
+    // Função auxiliar para mensagens amigáveis
+    const getAuthError = (error: AuthError) => {
+      // Mapas distintos para cada modo
+      const errorMapLogin: Record<string, string> = {
+        'Invalid login credentials':
+          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
+        'User not found':
+          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
+        'Email not confirmed': 'Verifique seu e-mail para ativar a conta.',
+        'Too many requests': 'Muitas tentativas. Tente novamente mais tarde.',
+        'Network error': 'Sem conexão com a internet.'
+      };
+
+      const errorMapSignup: Record<string, string> = {
+        'User already registered': 'E-mail já cadastrado. Tente fazer login.',
+        'Invalid password': 'Senha fraca. Use no mínimo 6 caracteres.',
+        'Network error': 'Sem conexão com a internet.'
+      };
+
+      const map = isLogin ? errorMapLogin : errorMapSignup;
+      return map[error.message] || 'Ocorreu um erro. Tente novamente.';
+      const errorMap = {
+        'Invalid login credentials':
+          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
+        'User not found':
+          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
+        'Email not confirmed': 'Verifique seu e-mail para ativar a conta.',
+        'Too many requests': 'Muitas tentativas. Tente novamente mais tarde.',
+        'Network error': 'Sem conexão com a internet.'
+      } as Record<string, string>;
+      return errorMap[error.message] ||
+        'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.';
+    };
+
     try {
       if (isSignUp) {
         // Cadastro de novo usuário
@@ -119,26 +153,27 @@ export function LoginForm({ initialMode = 'login' }: LoginFormProps) {
         toast.success('E-mail de redefinição enviado!');
       }
       else {
-        // Login
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) {
-          // Verifica se o erro é de e-mail não verificado
-          if (error.message.includes('Email not confirmed')) {
-            setMessage('Por favor, verifique seu e-mail para ativar sua conta.');
-          }
-          throw error;
-        }
+        if (error) throw error;
         
         toast.success('Login realizado com sucesso!');
         navigate('/');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro ao autenticar';
+      const errorMessage = error instanceof AuthError 
+        ? getAuthError(error)
+        : 'Erro desconhecido ao autenticar';
+      
       toast.error(errorMessage);
+      
+      // Log detalhado apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development' && error instanceof Error) {
+        console.log('[Auth] Detalhes do erro:', error.message);
+      }
     } finally {
       setIsLoading(false);
     }

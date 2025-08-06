@@ -21,6 +21,16 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'pkce'
+    },
+    global: {
+      fetch: (input, init) => {
+        return fetch(input, init).catch((error) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Supabase] Error handled:', error.message);
+          }
+          throw error;
+        });
+      }
     }
   }
 );

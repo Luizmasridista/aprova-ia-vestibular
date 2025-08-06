@@ -9,10 +9,16 @@ export interface AIProvider {
 }
 
 class GeminiProvider implements AIProvider {
-  private readonly apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  private readonly apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
+  // Allow model override via env, default to free model "gemini-1.5-flash"
+  private readonly model =
+    (import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash').trim();
+
   private readonly baseUrl =
     import.meta.env.VITE_GEMINI_API_URL ||
-    'https://generativelanguage.googleapis.com/v1beta';
+    (this.model.includes('pro')
+      ? 'https://generativelanguage.googleapis.com/v1'
+      : 'https://generativelanguage.googleapis.com/v1beta');
 
   async generate(prompt: string): Promise<string> {
     if (!this.apiKey) {
@@ -20,7 +26,7 @@ class GeminiProvider implements AIProvider {
     }
 
     const res = await fetch(
-      `${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`,
+      `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
