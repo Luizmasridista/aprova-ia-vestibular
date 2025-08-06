@@ -73,7 +73,7 @@ export function StaggerContainer({
     visible: {
       ...variants.visible,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 400,
         damping: 25,
         duration

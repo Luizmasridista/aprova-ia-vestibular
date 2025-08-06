@@ -8,7 +8,7 @@ import { ptBR } from 'date-fns/locale';
 interface RecentActivityProps {
   recentActivity: {
     id: string;
-    type: 'study_plan' | 'event_completed' | 'streak_milestone';
+    type: 'study_plan' | 'event_completed' | 'streak_milestone' | 'exercise_completed';
     title: string;
     description: string;
     timestamp: string;

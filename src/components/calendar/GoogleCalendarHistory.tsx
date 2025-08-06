@@ -40,23 +40,17 @@ const GoogleCalendarHistory: React.FC<GoogleCalendarHistoryProps> = ({
       setLoading(true);
       setError(null);
       
-      // Buscar histórico de sincronização da tabela google_calendar_sync_history
-      const { data, error: fetchError } = await supabase
-        .from('google_calendar_sync_history')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
+      // Como a tabela google_calendar_sync_history não existe, retornamos dados mock
+      const data: SyncHistoryItem[] = [];
       
-      if (fetchError) {
-        throw fetchError;
-      }
+      
+      setHistory(data);
+      setLoading(false);
       
       // Se não existir dados reais, criar dados de exemplo para demonstração
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         const mockHistory = generateMockHistory(limit);
         setHistory(mockHistory);
-      } else {
-        setHistory(data as SyncHistoryItem[]);
       }
     } catch (err) {
       console.error('Erro ao carregar histórico:', err);

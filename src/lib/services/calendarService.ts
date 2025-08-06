@@ -114,7 +114,12 @@ export const calendarService = {
       }
 
       console.log('✅ [CalendarService] Eventos encontrados:', data?.length || 0);
-      return data || [];
+      return (data || []).map(event => ({
+        ...event,
+        completed: !!event.completed_at,
+        event_type: (event.event_type as any) || 'study',
+        recurrence_pattern: event.recurrence_pattern ? (event.recurrence_pattern as any) : undefined
+      })) as unknown as CalendarEvent[];
     } catch (error) {
       console.error('❌ [CalendarService] Erro ao buscar eventos:', error);
       throw new Error('Não foi possível buscar os eventos do calendário');
@@ -172,7 +177,12 @@ export const calendarService = {
         console.log('📅 [CalendarService] Evento recorrente criado. Padrão:', eventData.recurrence_pattern);
       }
 
-      return data;
+      return {
+        ...data,
+        completed: !!data.completed_at,
+        event_type: (data.event_type as any) || 'study',
+        recurrence_pattern: data.recurrence_pattern ? (data.recurrence_pattern as any) : undefined
+      } as unknown as CalendarEvent;
     } catch (error) {
       console.error('❌ [CalendarService] Erro ao criar evento:', error);
       throw new Error('Não foi possível criar o evento');
@@ -197,7 +207,12 @@ export const calendarService = {
       }
 
       console.log('✅ [CalendarService] Evento atualizado com sucesso');
-      return data;
+      return {
+        ...data,
+        completed: !!data.completed_at,
+        event_type: (data.event_type as any) || 'study',
+        recurrence_pattern: data.recurrence_pattern ? (data.recurrence_pattern as any) : undefined
+      } as unknown as CalendarEvent;
     } catch (error) {
       console.error('❌ [CalendarService] Erro ao atualizar evento:', error);
       throw new Error('Não foi possível atualizar o evento');
@@ -247,7 +262,12 @@ export const calendarService = {
       }
 
       console.log('✅ [CalendarService] Evento marcado como concluído');
-      return data;
+      return {
+        ...data,
+        completed: !!data.completed_at,
+        event_type: (data.event_type as any) || 'study',
+        recurrence_pattern: data.recurrence_pattern ? (data.recurrence_pattern as any) : undefined
+      } as unknown as CalendarEvent;
     } catch (error) {
       console.error('❌ [CalendarService] Erro ao completar evento:', error);
       throw new Error('Não foi possível marcar o evento como concluído');

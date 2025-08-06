@@ -92,7 +92,10 @@ class MonthlyGoalsService {
       }
 
       console.log(`✅ [MonthlyGoals] ${data.length} metas salvas com sucesso`);
-      return data;
+      return (data || []).map(goal => ({
+        ...goal,
+        intensity: goal.intensity as 'low' | 'medium' | 'high' | 'intensive'
+      })) as MonthlyGoal[];
       
     } catch (error) {
       console.error('❌ [MonthlyGoals] Erro ao salvar metas mensais:', error);
@@ -117,7 +120,10 @@ class MonthlyGoalsService {
       const { data, error } = await query.order('month', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(goal => ({
+        ...goal,
+        intensity: goal.intensity as 'low' | 'medium' | 'high' | 'intensive'
+      })) as MonthlyGoal[];
       
     } catch (error) {
       console.error('❌ [MonthlyGoals] Erro ao buscar metas:', error);

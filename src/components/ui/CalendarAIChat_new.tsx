@@ -522,7 +522,7 @@ const CalendarAIChat: React.FC<CalendarAIChatProps> = ({
       console.log('🤖 [CalendarAIChat] Retornando resposta da IA:', response.response.substring(0, 100) + '...');
       
       // LOG FINAL PARA DEBUG
-      if (response.intent === 'delete_all_events') {
+      if (response.intent === 'delete_event') {
         console.log('🚨 [CalendarAIChat] CHEGOU ATÉ O FINAL SEM EXECUTAR AÇÃO!');
         console.log('🚨 [CalendarAIChat] Intent final:', response.intent);
       }
