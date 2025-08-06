@@ -304,7 +304,14 @@ export const studyPlanService = {
         
         if (!tableExists) {
           console.warn('⚠️ [StudyPlanService] Tabela calendar_events não existe. Pulando integração com calendário.');
-          return data;
+          return {
+            ...data,
+            mode: data.mode as "APRU_1b" | "APRU_REASONING",
+            daily_goals: data.daily_goals as any,
+            weekly_schedule: data.weekly_schedule as any,
+            revision_suggestions: data.revision_suggestions as any,
+            exam_suggestions: data.exam_suggestions as any
+          } as StudyPlanResponse;
         }
         
         console.log('📅 [StudyPlanService] Integrando plano com o calendário...');
@@ -323,7 +330,14 @@ export const studyPlanService = {
         // Não falhar o processo principal se a integração com calendário falhar
       }
       
-      return data;
+        return {
+          ...data,
+          mode: data.mode as "APRU_1b" | "APRU_REASONING",
+          daily_goals: data.daily_goals as any,
+          weekly_schedule: data.weekly_schedule as any,
+          revision_suggestions: data.revision_suggestions as any,
+          exam_suggestions: data.exam_suggestions as any
+        } as StudyPlanResponse;
     } catch (error) {
       console.error('❌ [StudyPlanService] Erro ao salvar plano:', error);
       throw error;
@@ -405,7 +419,7 @@ export const studyPlanService = {
       
       const { data: savedData, error } = await supabase
         .from('study_plans')
-        .insert([data])
+        .insert([data as any])
         .select('*')
         .single();
 
@@ -425,7 +439,14 @@ export const studyPlanService = {
         
         if (!tableExists) {
           console.warn('⚠️ [StudyPlanService] Tabela calendar_events não existe. Pulando integração com calendário.');
-          return savedData;
+          return {
+            ...savedData,
+            mode: savedData.mode as "APRU_1b" | "APRU_REASONING",
+            daily_goals: savedData.daily_goals as any,
+            weekly_schedule: savedData.weekly_schedule as any,
+            revision_suggestions: savedData.revision_suggestions as any,
+            exam_suggestions: savedData.exam_suggestions as any
+          } as StudyPlanResponse;
         }
         
         console.log('📅 [StudyPlanService] Integrando plano com o calendário...');
@@ -444,7 +465,14 @@ export const studyPlanService = {
         // Não falhar o processo principal se a integração com calendário falhar
       }
       
-      return savedData;
+      return {
+        ...savedData,
+        mode: savedData.mode as "APRU_1b" | "APRU_REASONING",
+        daily_goals: savedData.daily_goals as any,
+        weekly_schedule: savedData.weekly_schedule as any,
+        revision_suggestions: savedData.revision_suggestions as any,
+        exam_suggestions: savedData.exam_suggestions as any
+      } as StudyPlanResponse;
     } catch (error) {
       console.error('❌ [StudyPlanService] Erro ao gerar plano de estudos:', error);
       throw new Error('Não foi possível gerar o plano de estudos');
@@ -461,7 +489,14 @@ export const studyPlanService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(plan => ({
+        ...plan,
+        mode: plan.mode as "APRU_1b" | "APRU_REASONING",
+        daily_goals: plan.daily_goals as any,
+        weekly_schedule: plan.weekly_schedule as any,
+        revision_suggestions: plan.revision_suggestions as any,
+        exam_suggestions: plan.exam_suggestions as any
+      })) as StudyPlanResponse[];
     } catch (error) {
       console.error('Erro ao buscar planos de estudo:', error);
       return [];
@@ -475,14 +510,25 @@ export const studyPlanService = {
         .from('study_plans')
         .update({
           ...updates,
+          daily_goals: updates.daily_goals ? JSON.parse(JSON.stringify(updates.daily_goals)) : undefined,
+          weekly_schedule: updates.weekly_schedule ? JSON.parse(JSON.stringify(updates.weekly_schedule)) : undefined,
+          revision_suggestions: updates.revision_suggestions ? JSON.parse(JSON.stringify(updates.revision_suggestions)) : undefined,
+          exam_suggestions: updates.exam_suggestions ? JSON.parse(JSON.stringify(updates.exam_suggestions)) : undefined,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', planId)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        mode: data.mode as "APRU_1b" | "APRU_REASONING",
+        daily_goals: data.daily_goals as any,
+        weekly_schedule: data.weekly_schedule as any,
+        revision_suggestions: data.revision_suggestions as any,
+        exam_suggestions: data.exam_suggestions as any
+      } as StudyPlanResponse;
     } catch (error) {
       console.error('Erro ao atualizar plano de estudos:', error);
       throw new Error('Não foi possível atualizar o plano de estudos');
@@ -627,7 +673,13 @@ async function saveStudyPlan(
   try {
     const { data, error } = await supabase
       .from('study_plans')
-      .insert([plan])
+      .insert([{
+        ...plan,
+        daily_goals: JSON.parse(JSON.stringify(plan.daily_goals)),
+        weekly_schedule: JSON.parse(JSON.stringify(plan.weekly_schedule)),
+        revision_suggestions: plan.revision_suggestions ? JSON.parse(JSON.stringify(plan.revision_suggestions)) : undefined,
+        exam_suggestions: plan.exam_suggestions ? JSON.parse(JSON.stringify(plan.exam_suggestions)) : undefined
+      } as any])
       .select('*')
       .single();
 
@@ -636,7 +688,14 @@ async function saveStudyPlan(
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      mode: data.mode as "APRU_1b" | "APRU_REASONING",
+      daily_goals: data.daily_goals as any,
+      weekly_schedule: data.weekly_schedule as any,
+      revision_suggestions: data.revision_suggestions as any,
+      exam_suggestions: data.exam_suggestions as any
+    } as StudyPlanResponse;
   } catch (err) {
     console.error('Error in saveStudyPlan:', err);
     throw err;
@@ -655,7 +714,14 @@ async function getUserPlans(userId: string): Promise<StudyPlanResponse[]> {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(plan => ({
+      ...plan,
+      mode: plan.mode as "APRU_1b" | "APRU_REASONING",
+      daily_goals: plan.daily_goals as any,
+      weekly_schedule: plan.weekly_schedule as any,
+      revision_suggestions: plan.revision_suggestions as any,
+      exam_suggestions: plan.exam_suggestions as any
+    })) as StudyPlanResponse[];
   } catch (err) {
     console.error('Error in getUserPlans:', err);
     return [];
@@ -666,7 +732,13 @@ async function updatePlan(planId: string, updates: Partial<StudyPlanResponse>): 
   try {
     const { data, error } = await supabase
       .from('study_plans')
-      .update(updates)
+      .update({
+        ...updates,
+        daily_goals: updates.daily_goals ? JSON.parse(JSON.stringify(updates.daily_goals)) : undefined,
+        weekly_schedule: updates.weekly_schedule ? JSON.parse(JSON.stringify(updates.weekly_schedule)) : undefined,
+        revision_suggestions: updates.revision_suggestions ? JSON.parse(JSON.stringify(updates.revision_suggestions)) : undefined,
+        exam_suggestions: updates.exam_suggestions ? JSON.parse(JSON.stringify(updates.exam_suggestions)) : undefined
+      } as any)
       .eq('id', planId)
       .select('*')
       .single();
@@ -676,7 +748,14 @@ async function updatePlan(planId: string, updates: Partial<StudyPlanResponse>): 
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      mode: data.mode as "APRU_1b" | "APRU_REASONING",
+      daily_goals: data.daily_goals as any,
+      weekly_schedule: data.weekly_schedule as any,
+      revision_suggestions: data.revision_suggestions as any,
+      exam_suggestions: data.exam_suggestions as any
+    } as StudyPlanResponse;
   } catch (err) {
     console.error('Error in updatePlan:', err);
     throw err;

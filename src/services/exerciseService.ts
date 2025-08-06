@@ -80,9 +80,10 @@ class ExerciseService {
       return {
         id: exercise.id,
         subject: exercise.subject,
-        difficulty: exercise.difficulty,
+        difficulty: (exercise.difficulty as 'easy' | 'medium' | 'hard') || 'medium',
         question: exercise.question,
-        options: exercise.options,
+        options: Array.isArray(exercise.options) ? exercise.options as string[] : 
+                 typeof exercise.options === 'string' ? [exercise.options] : [],
         correct_answer: exercise.correct_answer,
         explanation: exercise.explanation,
         created_at: exercise.created_at

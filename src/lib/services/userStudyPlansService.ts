@@ -50,7 +50,7 @@ class UserStudyPlansService {
       // Transformar dados para o formato de resumo
       const summaries: StudyPlanSummary[] = (data || []).map(plan => ({
         id: plan.id,
-        mode: plan.mode,
+        mode: plan.mode as "APRU_1b" | "APRU_REASONING",
         target_course: plan.target_course || 'Curso não informado',
         target_institution: plan.target_institution || 'Instituição não informada',
         target_date: plan.target_date || '',
@@ -91,7 +91,14 @@ class UserStudyPlansService {
       }
 
       console.log('✅ [UserStudyPlansService] Grade encontrada:', data.id);
-      return data;
+      return {
+        ...data,
+        mode: data.mode as "APRU_1b" | "APRU_REASONING",
+        daily_goals: data.daily_goals as any,
+        weekly_schedule: data.weekly_schedule as any,
+        revision_suggestions: data.revision_suggestions as any,
+        exam_suggestions: data.exam_suggestions as any
+      } as UserStudyPlan;
     } catch (error) {
       console.error('❌ [UserStudyPlansService] Erro inesperado:', error);
       throw error;
@@ -145,16 +152,21 @@ class UserStudyPlansService {
       // Criar nova grade baseada na original
       const { data, error } = await supabase
         .from('study_plans')
-        .insert({
+        .insert([{
           user_id: userId,
-          mode: originalPlan.mode,
+          name: `Cópia de Plano - ${new Date().toLocaleDateString()}`,
+          description: 'Cópia de plano de estudos',
+          mode: originalPlan.mode as string,
           target_course: originalPlan.target_course,
           target_institution: originalPlan.target_institution,
           target_date: originalPlan.target_date,
-          weekly_schedule: originalPlan.weekly_schedule,
-          daily_goals: originalPlan.daily_goals,
-          revision_suggestions: originalPlan.revision_suggestions,
-        })
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: originalPlan.target_date,
+          weekly_schedule: JSON.parse(JSON.stringify(originalPlan.weekly_schedule || [])),
+          daily_goals: JSON.parse(JSON.stringify(originalPlan.daily_goals || [])),
+          revision_suggestions: originalPlan.revision_suggestions ? JSON.parse(JSON.stringify(originalPlan.revision_suggestions)) : null,
+          exam_suggestions: null
+        } as any])
         .select('id')
         .single();
 
