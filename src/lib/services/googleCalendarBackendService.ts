@@ -3,7 +3,7 @@
  * Gerencia sincronização, mapeamentos e configurações via Edge Functions
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface GoogleCalendarIntegration {
   id: string;
@@ -50,7 +50,7 @@ class GoogleCalendarBackendService {
 
   constructor() {
     // URL da Edge Function
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL.replace('supabase.com', 'supabase.co')}/functions/v1/google-calendar-sync`;
+    this.baseUrl = `https://glrdhaihzagnryzmmsuz.supabase.co/functions/v1/google-calendar-sync`;
   }
 
   /**

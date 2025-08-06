@@ -163,7 +163,7 @@ export const GoogleCalendarIntegration: React.FC<GoogleCalendarIntegrationProps>
       console.log('🔄 [GoogleCalendarIntegration] Iniciando sincronização...');
       
       // Buscar todos os eventos do usuário do Supabase
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data: events, error } = await supabase
         .from('calendar_events')
         .select('*')

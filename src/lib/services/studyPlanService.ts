@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { aiService } from './aiService';
 import { calendarService } from './calendarService';
 import { monthlyGoalsService } from './monthlyGoalsService';

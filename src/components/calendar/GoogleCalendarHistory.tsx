@@ -8,7 +8,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Separator } from '../ui/separator';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SyncHistoryItem {
   id: string;
