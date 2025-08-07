@@ -91,11 +91,9 @@ export function LoginForm({ initialMode = 'login' }: LoginFormProps) {
     const getAuthError = (error: AuthError) => {
       // Mapas distintos para cada modo
       const errorMapLogin: Record<string, string> = {
-        'Invalid login credentials':
-          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
-        'User not found':
-          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
-        'Email not confirmed': 'Verifique seu e-mail para ativar a conta.',
+        'Invalid login credentials': 'E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.',
+        'User not found': 'E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.',
+        'Email not confirmed': 'Verifique seu e-mail para confirmar sua conta antes de fazer login.',
         'Too many requests': 'Muitas tentativas. Tente novamente mais tarde.',
         'Network error': 'Sem conexão com a internet.'
       };
@@ -108,17 +106,6 @@ export function LoginForm({ initialMode = 'login' }: LoginFormProps) {
 
       const map = isLogin ? errorMapLogin : errorMapSignup;
       return map[error.message] || 'Ocorreu um erro. Tente novamente.';
-      const errorMap = {
-        'Invalid login credentials':
-          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
-        'User not found':
-          'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.',
-        'Email not confirmed': 'Verifique seu e-mail para ativar a conta.',
-        'Too many requests': 'Muitas tentativas. Tente novamente mais tarde.',
-        'Network error': 'Sem conexão com a internet.'
-      } as Record<string, string>;
-      return errorMap[error.message] ||
-        'Usuário não cadastrado. Se você tem certeza que criou uma conta no Aprova.ae, cheque sua caixa de entrada do e-mail e confirme sua identidade.';
     };
 
     try {
