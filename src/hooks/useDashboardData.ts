@@ -122,11 +122,11 @@ const fetchActiveExerciseSession = async (userId: string) => {
       .gte('created_at', today.toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
 
-    const completed = data.exercise_results[0]?.count || 0;
+    const completed = data.exercise_results?.[0]?.count || 0;
     return {
       completed,
       total: Math.max(completed, 5),
@@ -186,6 +186,7 @@ const calculateStreaks = (events: CalendarEvent[]) => {
 const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[]) => {
   const progress: { [key: string]: { completed: number; total: number; correct: number; wrong: number } } = {};
 
+  // Processar eventos de calendário
   events.forEach(event => {
     if (event.subject) {
       if (!progress[event.subject]) {
@@ -198,22 +199,32 @@ const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[
     }
   });
 
-  exerciseResults.forEach(result => {
-    const subject = 'Exercícios'; // Como não há subject nos exercícios, usamos um padrão
+  // Processar resultados de exercícios
+  if (exerciseResults.length > 0) {
+    const subject = 'Exercícios';
     if (!progress[subject]) {
       progress[subject] = { completed: 0, total: 0, correct: 0, wrong: 0 };
     }
-    if (result.is_correct) {
-      progress[subject].correct++;
-    } else {
-      progress[subject].wrong++;
-    }
-  });
+    
+    exerciseResults.forEach(result => {
+      progress[subject].total++;
+      if (result.is_correct) {
+        progress[subject].correct++;
+        progress[subject].completed++;
+      } else {
+        progress[subject].wrong++;
+      }
+    });
+  }
 
   return Object.entries(progress).map(([subject, data]) => ({
     subject,
     ...data,
-    percentage: data.total > 0 ? (data.completed / data.total) * 100 : 0,
+    percentage: data.total > 0 ? 
+      subject === 'Exercícios' ? 
+        (data.correct / data.total) * 100 : 
+        (data.completed / data.total) * 100 
+      : 0,
     notAttempted: data.total - data.completed,
   }));
 };
