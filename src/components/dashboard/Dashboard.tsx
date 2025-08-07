@@ -6,6 +6,7 @@ import { WelcomeHeader } from './WelcomeHeader';
 import { StatsGrid } from './StatsGrid';
 import { StudyOverview } from './StudyOverview';
 import { PerformanceSection } from './PerformanceSection';
+import { SubjectPerformanceChart } from './SubjectPerformanceChart';
 import { QuickActions } from './QuickActions';
 import { RecentActivity } from './RecentActivity';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,15 +60,18 @@ const Dashboard: React.FC = () => {
           
           <PerformanceSection stats={stats} isLoading={isLoading} />
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 xl:col-span-2">
               <QuickActions />
             </div>
-            <div>
-              <RecentActivity 
-                recentActivity={stats.recentActivity} 
-                isLoading={isLoading} 
-              />
+            <div className="lg:col-span-1">
+              <div className="grid grid-cols-1 gap-6">
+                <SubjectPerformanceChart stats={stats} isLoading={isLoading} />
+                <RecentActivity 
+                  recentActivity={stats.recentActivity} 
+                  isLoading={isLoading} 
+                />
+              </div>
             </div>
           </div>
         </div>
