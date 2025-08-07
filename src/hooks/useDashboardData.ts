@@ -229,9 +229,10 @@ const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[
   }));
 };
 
-const generateRecentActivity = (events: CalendarEvent[], studyPlans: StudyPlan[]) => {
+const generateRecentActivity = (events: CalendarEvent[], studyPlans: StudyPlan[], exerciseResults: ExerciseResult[]) => {
   const activities: any[] = [];
 
+  // Eventos completados
   events.filter(e => e.completed).forEach(event => {
     activities.push({
       id: `evt-${event.id}`,
@@ -239,10 +240,11 @@ const generateRecentActivity = (events: CalendarEvent[], studyPlans: StudyPlan[]
       title: `Evento Concluído: ${event.title}`,
       description: `Você completou a tarefa de ${event.subject || 'estudos'}.`,
       timestamp: event.updated_at || event.created_at,
-      icon: 'CalendarCheck'
+      icon: '✅'
     });
   });
 
+  // Planos de estudo criados
   studyPlans.forEach(plan => {
     activities.push({
       id: `plan-${plan.id}`,
@@ -250,9 +252,26 @@ const generateRecentActivity = (events: CalendarEvent[], studyPlans: StudyPlan[]
       title: `Plano Criado: ${plan.target_course}`,
       description: `Novo plano de estudos com meta para ${new Date(plan.target_date).toLocaleDateString()}.`,
       timestamp: plan.created_at,
-      icon: 'ClipboardList'
+      icon: '📚'
     });
   });
+
+  // Exercícios completados (últimos 5 dias)
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  
+  exerciseResults
+    .filter(result => new Date(result.created_at) >= fiveDaysAgo)
+    .forEach(result => {
+      activities.push({
+        id: `exercise-${result.id}`,
+        type: 'exercise_completed',
+        title: result.is_correct ? 'Exercício Correto' : 'Exercício Tentado',
+        description: `Você ${result.is_correct ? 'acertou' : 'tentou'} um exercício em ${Math.round(result.time_spent / 60)} min.`,
+        timestamp: result.created_at,
+        icon: result.is_correct ? '🎯' : '💪'
+      });
+    });
 
   return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
 };
@@ -454,7 +473,7 @@ const exerciseResults = (exerciseResultsData.data || []) as ExerciseResult[];
 
       const subjectProgress = calculateSubjectProgress(events, exerciseResults);
 
-      const recentActivity = generateRecentActivity(events, studyPlans);
+      const recentActivity = generateRecentActivity(events, studyPlans, exerciseResults);
 
       const personalizedGoals = calculatePersonalizedGoals(studyPlans, events, currentStreak);
 
