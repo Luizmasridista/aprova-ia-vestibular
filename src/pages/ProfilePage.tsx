@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, AlertTriangle } from 'lucide-react';
 import MyStudyPlans from '@/components/profile/MyStudyPlans';
 import {
   AlertDialog,
@@ -18,8 +17,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 export default function ProfilePage() {
+  const { toast } = useToast();
   const { user, updateProfile, updatePassword, deleteAccount } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +34,7 @@ export default function ProfilePage() {
     newPassword: '',
     confirmPassword: '',
   });
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -51,34 +54,27 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleDeleteAccount = async () => {
-    setIsDeleting(true);
-    
+  async function handleDeleteAccount() {
     try {
-      const { error } = await deleteAccount();
+      setIsDeleting(true);
+      await deleteAccount();
       
-      if (error) {
-        toast({
-          title: 'Erro ao excluir conta',
-          description: error.message || 'Ocorreu um erro inesperado. Tente novamente.',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Clear user data from client
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
+      localStorage.clear();
+      navigate('/');
       toast({
-        title: 'Conta excluída com sucesso',
-        description: 'Sua conta e todos os dados foram permanentemente removidos.',
-        variant: 'default',
+        title: 'Sua conta foi excluída com sucesso',
+        variant: 'default'
       });
-      
-      // O redirecionamento será feito automaticamente pelo hook useAuth
     } catch (error) {
-      console.error('Erro ao excluir conta:', error);
+      console.error('Error deleting account:', error);
       toast({
         title: 'Erro ao excluir conta',
-        description: 'Ocorreu um erro inesperado. Tente novamente.',
-        variant: 'destructive',
+        description: error instanceof Error ? error.message : 'Tente novamente.',
+        variant: 'destructive'
       });
     } finally {
       setIsDeleting(false);
@@ -115,6 +111,7 @@ export default function ProfilePage() {
       toast({
         title: 'Perfil atualizado com sucesso!',
         description: 'Suas informações foram salvas.',
+        variant: 'default'
       });
       
       setIsEditing(false);
@@ -123,7 +120,7 @@ export default function ProfilePage() {
       toast({
         title: 'Erro ao atualizar perfil',
         description: error instanceof Error ? error.message : 'Ocorreu um erro ao atualizar seu perfil.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
@@ -305,7 +302,11 @@ export default function ProfilePage() {
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isDeleting}>
+                    <Button 
+                      variant="destructive" 
+                      disabled={isDeleting}
+                      className="!bg-red-600 !text-white hover:!bg-red-700"
+                    >
                       {isDeleting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
