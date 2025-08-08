@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Trophy, Target, Clock } from 'lucide-react';
 import { DashboardStats } from '@/hooks/useDashboardData';
+import { SubjectPerformanceDonut } from './SubjectPerformanceDonut';
 
 interface PerformanceSectionProps {
   stats: DashboardStats;
@@ -84,48 +85,10 @@ export const PerformanceSection: React.FC<PerformanceSectionProps> = ({ stats, i
         </Card>
 
         {/* Progresso por Matéria */}
-        <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-emerald-500" />
-              Progresso por Matéria
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stats.subjectProgress.length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Nenhuma atividade por matéria ainda</p>
-                <p className="text-sm text-gray-400">Complete algumas atividades para ver o progresso</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {stats.subjectProgress.slice(0, 4).map((subject, index) => (
-                  <div key={subject.subject} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">{subject.subject}</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        {Math.round(subject.percentage)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <motion.div
-                        className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${subject.percentage}%` }}
-                        transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{subject.completed} concluídas</span>
-                      <span>{subject.total} total</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <SubjectPerformanceDonut 
+          subjectProgress={stats.subjectProgress} 
+          isLoading={isLoading} 
+        />
       </div>
     </motion.div>
   );

@@ -50,22 +50,19 @@ const Dashboard: React.FC = () => {
         <meta name="description" content="Acompanhe seu progresso nos estudos e gerencie suas atividades" />
       </Helmet>
       
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
-          <WelcomeHeader />
-          
-          <StatsGrid stats={stats} isLoading={isLoading} />
-          
-          <StudyOverview stats={stats} isLoading={isLoading} />
-          
-          <PerformanceSection stats={stats} isLoading={isLoading} />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 xl:col-span-2">
-              <QuickActions />
-            </div>
-            <div className="lg:col-span-1">
-              <div className="grid grid-cols-1 gap-6">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 flex flex-col">
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto p-6 space-y-8">
+            <WelcomeHeader />
+            
+            <StatsGrid stats={stats} isLoading={isLoading} />
+            
+            <StudyOverview stats={stats} isLoading={isLoading} />
+            
+            <PerformanceSection stats={stats} isLoading={isLoading} />
+            
+            <div className="grid grid-cols-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SubjectPerformanceChart stats={stats} isLoading={isLoading} />
                 <RecentActivity 
                   recentActivity={stats.recentActivity} 
@@ -75,6 +72,13 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Footer with QuickActions */}
+        <footer className="bg-white border-t border-gray-200 mt-8">
+          <div className="max-w-7xl mx-auto p-6">
+            <QuickActions />
+          </div>
+        </footer>
       </div>
     </>
   );

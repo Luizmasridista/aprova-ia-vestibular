@@ -75,6 +75,14 @@ export interface DashboardStats {
     correct?: number;
     wrong?: number;
     notAttempted?: number;
+    exercises?: Array<{
+      id: string;
+      question: string;
+      isCorrect: boolean;
+      createdAt: string;
+      timeSpent: number;
+      difficulty: string;
+    }>;
   }[];
   recentActivity: {
     id: string;
@@ -184,13 +192,39 @@ const calculateStreaks = (events: CalendarEvent[]) => {
 };
 
 const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[]) => {
-  const progress: { [key: string]: { completed: number; total: number; correct: number; wrong: number } } = {};
+  const progress: { 
+    [key: string]: { 
+      completed: number; 
+      total: number; 
+      correct: number; 
+      wrong: number;
+      exercises: Array<{
+        id: string;
+        question: string;
+        isCorrect: boolean;
+        createdAt: string;
+        timeSpent: number;
+        difficulty: string;
+      }>;
+    } 
+  } = {};
+
+  // Inicializar com array vazio para exercícios
+  Object.keys(progress).forEach(key => {
+    progress[key].exercises = [];
+  });
 
   // Processar eventos de calendário
   events.forEach(event => {
     if (event.subject) {
       if (!progress[event.subject]) {
-        progress[event.subject] = { completed: 0, total: 0, correct: 0, wrong: 0 };
+        progress[event.subject] = { 
+          completed: 0, 
+          total: 0, 
+          correct: 0, 
+          wrong: 0,
+          exercises: []
+        };
       }
       progress[event.subject].total++;
       if (event.completed) {
@@ -199,23 +233,48 @@ const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[
     }
   });
 
-  // Processar resultados de exercícios
-  if (exerciseResults.length > 0) {
-    const subject = 'Exercícios';
+  // Processar resultados de exercícios por matéria
+  exerciseResults.forEach(result => {
+    // Usar a matéria do exercício ou 'Geral' se não houver matéria definida
+    const subject = result.subject || 'Geral';
+    
     if (!progress[subject]) {
-      progress[subject] = { completed: 0, total: 0, correct: 0, wrong: 0 };
+      progress[subject] = { 
+        completed: 0, 
+        total: 0, 
+        correct: 0, 
+        wrong: 0,
+        exercises: []
+      };
     }
     
-    exerciseResults.forEach(result => {
-      progress[subject].total++;
-      if (result.is_correct) {
-        progress[subject].correct++;
-        progress[subject].completed++;
-      } else {
-        progress[subject].wrong++;
-      }
-    });
-  }
+    progress[subject].total++;
+    if (result.is_correct) {
+      progress[subject].correct++;
+      progress[subject].completed++;
+    } else {
+      progress[subject].wrong++;
+    }
+
+    // Adicionar detalhes do exercício
+    if (result.exercise_sessions) {
+      progress[subject].exercises.push({
+        id: result.id,
+        question: result.exercise_sessions.question || 'Pergunta não disponível',
+        isCorrect: result.is_correct,
+        createdAt: result.created_at,
+        timeSpent: result.time_spent || 0,
+        difficulty: result.exercise_sessions.difficulty || 'medium'
+      });
+    }
+  });
+
+  // Ordenar exercícios por data (mais recentes primeiro)
+  Object.keys(progress).forEach(subject => {
+    progress[subject].exercises.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  });
 
   return Object.entries(progress).map(([subject, data]) => ({
     subject,
@@ -226,6 +285,7 @@ const calculateSubjectProgress = (events: CalendarEvent[], exerciseResults: any[
         (data.completed / data.total) * 100 
       : 0,
     notAttempted: data.total - data.completed,
+    exercises: data.exercises
   }));
 };
 
@@ -432,7 +492,19 @@ export const useDashboardData = (): DashboardData => {
       const [studyPlansData, eventsData, exerciseResultsData, activeSessionData] = await Promise.all([
         supabase.from('study_plans').select('*').eq('user_id', user.id),
         supabase.from('calendar_events').select('*').eq('user_id', user.id),
-        supabase.from('exercise_results').select('*').eq('user_id', user.id),
+        supabase
+          .from('exercise_results')
+          .select(`
+            *,
+            exercise_sessions (
+              question,
+              difficulty,
+              subject,
+              created_at
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
         fetchActiveExerciseSession(user.id)
       ]);
 

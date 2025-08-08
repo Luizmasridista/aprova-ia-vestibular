@@ -1,35 +1,145 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { BookOpen, Target, TrendingUp } from 'lucide-react';
+import { BookOpen, Target, TrendingUp, ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock, Award } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { DashboardStats } from '@/hooks/useDashboardData';
+
+// Estilos globais para a barra de rolagem personalizada
+const scrollbarStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+  
+  /* Melhorias de responsividade */
+  @media (max-width: 640px) {
+    .subject-card {
+      padding: 0.75rem !important;
+    }
+    
+    .subject-title {
+      font-size: 0.875rem !important;
+    }
+    
+    .exercise-card {
+      padding: 0.5rem !important;
+    }
+  }
+`;
+
+const DifficultyBadge = ({ difficulty }: { difficulty: string }) => {
+  const getDifficultyColor = () => {
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        return 'bg-green-100 text-green-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'hard':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <span className={`text-xs px-2 py-1 rounded-full ${getDifficultyColor()}`}>
+      {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+    </span>
+  );
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 interface SubjectPerformanceChartProps {
   stats: DashboardStats;
   isLoading: boolean;
 }
 
+interface Exercise {
+  id: string;
+  question: string;
+  isCorrect: boolean;
+  createdAt: string;
+  timeSpent: number;
+  difficulty: string;
+}
+
+interface SubjectProgress {
+  subject: string;
+  completed: number;
+  total: number;
+  percentage: number;
+  correct?: number;
+  wrong?: number;
+  notAttempted?: number;
+  exercises?: Exercise[];
+}
+
+interface ChartDataItem {
+  name: string;
+  value: number;
+  percentage: number;
+  completed: number;
+  correct: number;
+  wrong: number;
+  accuracy: number;
+  color: string;
+  subject: string;
+  exercises: Exercise[];
+}
+
 export const SubjectPerformanceChart: React.FC<SubjectPerformanceChartProps> = ({ 
   stats, 
   isLoading 
 }) => {
-  // Preparar dados para o gráfico
-  const chartData = stats.subjectProgress
-    .filter(subject => subject.total > 0)
-    .map((subject, index) => ({
-      name: subject.subject,
-      value: subject.total,
-      percentage: Math.round(subject.percentage),
-      completed: subject.completed,
-      correct: subject.correct || 0,
-      wrong: subject.wrong || 0,
-      accuracy: subject.total > 0 ? Math.round(((subject.correct || subject.completed) / subject.total) * 100) : 0,
-      color: COLORS[index % COLORS.length]
-    }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6); // Top 6 matérias
+  const [expandedSubjects, setExpandedSubjects] = useState<{[key: string]: boolean}>({});
 
+  const toggleSubject = (subjectName: string) => {
+    setExpandedSubjects(prev => {
+      const newState = {
+        ...prev,
+        [subjectName]: !prev[subjectName]
+      };
+      
+      // Rolar suavemente para o item expandido após a atualização do estado
+      if (newState[subjectName]) {
+        setTimeout(() => {
+          const element = document.getElementById(`subject-${subjectName}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
+      }
+      
+      return newState;
+    });
+  };
+
+  // Preparar dados para o gráfico
   const COLORS = [
     'hsl(220, 100%, 60%)', // Blue
     'hsl(160, 100%, 45%)', // Emerald  
@@ -38,6 +148,24 @@ export const SubjectPerformanceChart: React.FC<SubjectPerformanceChartProps> = (
     'hsl(10, 100%, 60%)',  // Red
     'hsl(200, 100%, 60%)', // Sky
   ];
+
+  // Mapear os dados para o formato esperado pelo gráfico
+  const chartData: ChartDataItem[] = stats.subjectProgress
+    .map((subject, index) => ({
+      name: subject.subject,
+      value: subject.total,
+      percentage: subject.percentage,
+      completed: subject.completed,
+      correct: subject.correct || 0,
+      wrong: subject.wrong || 0,
+      accuracy: subject.correct && subject.wrong ? 
+        Math.round((subject.correct / (subject.correct + subject.wrong)) * 100) : 0,
+      color: COLORS[index % COLORS.length],
+      subject: subject.subject,
+      exercises: subject.exercises || []
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6); // Top 6 matérias
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -161,8 +289,31 @@ export const SubjectPerformanceChart: React.FC<SubjectPerformanceChartProps> = (
     );
   }
 
+  // Encontrar a matéria com melhor desempenho (apenas entre as que têm exercícios)
+  const subjectsWithExercises = chartData.filter(subject => subject.correct + subject.wrong > 0);
+  
+  const bestSubject = subjectsWithExercises.length > 0 
+    ? subjectsWithExercises.reduce((best, current) => 
+        (current.accuracy > (best?.accuracy || 0) ? current : best), 
+        subjectsWithExercises[0]
+      )
+    : null;
+
+  // Encontrar a matéria com pior desempenho (apenas entre as que têm exercícios)
+  const worstSubject = subjectsWithExercises.length > 0
+    ? subjectsWithExercises.reduce((worst, current) => 
+        (current.accuracy < (worst?.accuracy || 100) ? current : worst), 
+        subjectsWithExercises[0]
+      )
+    : null;
+
   return (
-    <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg">
+    <>
+      <Helmet>
+        <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
+      </Helmet>
+      
+      <Card className="border-0 bg-white/90 backdrop-blur-sm shadow-lg">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-blue-500" />
@@ -174,36 +325,176 @@ export const SubjectPerformanceChart: React.FC<SubjectPerformanceChartProps> = (
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="h-64"
+          className="space-y-4"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
-                dataKey="value"
-                animationBegin={0}
-                animationDuration={1000}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color}
-                    className="hover:opacity-80 transition-opacity"
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
+          {chartData.map((subject) => (
+            <div id={`subject-${subject.name}`} key={subject.name} className="subject-card mb-4 last:mb-0 bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100">
+              <div className="flex justify-between items-center">
+                <h3 className="subject-title text-sm font-semibold text-gray-800">{subject.name}</h3>
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-700">
+                    {subject.completed}<span className="text-gray-400">/{subject.value}</span>
+                  </span>
+                  <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                    {subject.percentage}%
+                  </span>
+                </div>
+              </div>
+              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${subject.percentage}%` }}
+                  transition={{ duration: 1, delay: 0.2 }}
+                  className={`h-full ${subject.percentage >= 70 ? 'bg-green-500' : subject.percentage >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                  style={{ backgroundColor: subject.color }}
+                />
+              </div>
+              <div className="space-y-2 mt-3 pl-3 border-l-2 border-gray-200">
+                {/* Barra de progresso para exercícios corretos */}
+                <div className="flex items-center text-xs">
+                  <span className="w-16 text-gray-600 font-medium">Acertos</span>
+                  <div className="flex-1 mx-2">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${subject.accuracy}%` }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className="h-full bg-green-500"
+                      />
+                    </div>
+                  </div>
+                  <span className="w-8 text-right font-semibold text-green-700">{subject.correct}</span>
+                </div>
 
-        {/* Legenda customizada */}
-        <CustomLegend payload={chartData.map(item => ({ value: item.name, color: item.color }))} />
+                {/* Barra de progresso para exercícios errados */}
+                {subject.wrong > 0 && (
+                  <div className="flex items-center text-xs">
+                    <span className="w-16 text-gray-600 font-medium">Erros</span>
+                    <div className="flex-1 mx-2">
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${(subject.wrong / (subject.correct + subject.wrong)) * 100}%` 
+                          }}
+                          transition={{ duration: 0.8, delay: 0.6 }}
+                          className="h-full bg-red-500"
+                        />
+                      </div>
+                    </div>
+                    <span className="w-8 text-right font-semibold text-red-700">{subject.wrong}</span>
+                  </div>
+                )}
+
+                {/* Estatísticas resumidas */}
+                <div className="flex justify-between items-center text-xs pt-2 mt-2 border-t border-gray-100">
+                  <div className="flex items-center">
+                    <span className="text-gray-500">Taxa de acerto: </span>
+                    <span className={`ml-1 font-semibold ${
+                      subject.accuracy >= 70 ? 'text-green-600' : 
+                      subject.accuracy >= 40 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {Math.round(subject.accuracy)}%
+                    </span>
+                  </div>
+                  <span className="text-gray-500">
+                    {subject.value} exercício{subject.value !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {/* Botão para expandir/recolher */}
+                <button
+                  onClick={() => toggleSubject(subject.name)}
+                  className="ml-2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label={expandedSubjects[subject.name] ? 'Recolher exercícios' : 'Expandir exercícios'}
+                >
+                  {expandedSubjects[subject.name] ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+
+                {/* Lista de exercícios */}
+                <AnimatePresence>
+                  {expandedSubjects[subject.name] && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="mt-3 overflow-hidden"
+                    >
+                      <div className="space-y-3 border-t border-gray-100 pt-3">
+                        <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Exercícios Recentes
+                        </h4>
+                        
+                        {/* Verifica se existem exercícios para exibir */}
+                        {subject.exercises && subject.exercises.length > 0 ? (
+                          <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                            {subject.exercises.map((exercise, idx) => (
+                              <motion.div
+                                key={`${exercise.id}-${idx}`}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.03, duration: 0.2 }}
+                                className={`exercise-card p-3 text-xs rounded-lg border ${
+                                  exercise.isCorrect 
+                                    ? 'border-green-100 bg-green-50 hover:bg-green-100' 
+                                    : 'border-red-100 bg-red-50 hover:bg-red-50'
+                                } transition-colors duration-200`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start">
+                                      <div className={`mt-0.5 mr-2 flex-shrink-0 ${exercise.isCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                                        {exercise.isCorrect ? (
+                                          <CheckCircle2 className="h-4 w-4" />
+                                        ) : (
+                                          <XCircle className="h-4 w-4" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <p className={`text-sm font-medium ${
+                                          exercise.isCorrect ? 'text-green-800' : 'text-red-800'
+                                        }`}>
+                                          {exercise.question}
+                                        </p>
+                                        <div className="flex flex-wrap items-center mt-1.5 gap-x-3 gap-y-1 text-xs">
+                                          <span className="text-gray-500 flex items-center">
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            {formatDate(exercise.createdAt)}
+                                          </span>
+                                          <span className="text-gray-500">
+                                            {exercise.timeSpent}s
+                                          </span>
+                                          <DifficultyBadge difficulty={exercise.difficulty} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-2">
+                              <BookOpen className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <p className="text-sm text-gray-500">Nenhum exercício realizado ainda</p>
+                            <p className="text-xs text-gray-400 mt-1">Comece a praticar para ver seu progresso</p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))}
+        </motion.div>
 
         {/* Estatísticas resumidas */}
         <motion.div
@@ -257,5 +548,8 @@ export const SubjectPerformanceChart: React.FC<SubjectPerformanceChartProps> = (
         )}
       </CardContent>
     </Card>
+    </>
   );
 };
+
+export default SubjectPerformanceChart;

@@ -163,6 +163,11 @@ export function useAuth() {
       
       if (error) throw error;
       
+      // Limpeza de dados locais
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('userPreferences');
+      sessionStorage.clear();
+      
       return { error: null };
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
@@ -247,7 +252,7 @@ export function useAuth() {
   };
 
   // Função para excluir a conta do usuário
-  const deleteAccount = async () => {
+  const deleteAccount = async (): Promise<{ error: Error | null }> => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     
     try {
@@ -255,84 +260,36 @@ export function useAuth() {
         throw new Error('Usuário não autenticado');
       }
 
-      const userId = state.user.id;
+      // Chama a função Edge para deletar a conta
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: state.user.id }
+      });
 
-      // Criar cliente Supabase com service_role key para ter permissões administrativas
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        "https://glrdhaihzagnryzmmsuz.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdscmRoYWloemFnbnJ5em1tc3V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMzc0OTQsImV4cCI6MjA2ODcxMzQ5NH0.6jwBiAxBZ83ZWBc0mHEcww8Tm_jAEVv_mNqjYd5xbPA",
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false
-          }
-        }
-      );
+      if (error) throw error;
 
-      // Excluir dados do usuário das tabelas
-      try {
-        // Excluir resultados de exercícios
-        const { error: exerciseResultsError } = await supabaseAdmin
-          .from('exercise_results')
-          .delete()
-          .eq('user_id', userId);
-
-        if (exerciseResultsError) {
-          console.error('Erro ao excluir exercise_results:', exerciseResultsError);
-        }
-
-        // Excluir sessões de exercícios
-        const { error: exerciseSessionsError } = await supabaseAdmin
-          .from('exercise_sessions')
-          .delete()
-          .eq('user_id', userId);
-
-        if (exerciseSessionsError) {
-          console.error('Erro ao excluir exercise_sessions:', exerciseSessionsError);
-        }
-
-        // Excluir eventos do calendário
-        const { error: calendarEventsError } = await supabaseAdmin
-          .from('calendar_events')
-          .delete()
-          .eq('user_id', userId);
-
-        if (calendarEventsError) {
-          console.error('Erro ao excluir calendar_events:', calendarEventsError);
-        }
-
-      } catch (deleteDataError) {
-        console.error('Erro ao excluir dados do usuário:', deleteDataError);
-        // Continua mesmo se houver erro na exclusão dos dados
-      }
-
-      // Excluir o usuário da autenticação
-      try {
-        const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        
-        if (deleteUserError) {
-          console.error('Erro ao excluir usuário da autenticação:', deleteUserError);
-          // Se falhar ao excluir da autenticação, pelo menos fazer logout
-          await signOut();
-          throw new Error('Dados excluídos, mas falha ao remover conta de autenticação');
-        }
-      } catch (deleteUserError) {
-        console.error('Erro ao excluir usuário da autenticação:', deleteUserError);
-        // Se falhar ao excluir da autenticação, pelo menos fazer logout
-        await signOut();
-        throw new Error('Dados excluídos, mas falha ao remover conta de autenticação');
-      }
-
-      // Fazer logout após exclusão bem-sucedida
       await signOut();
-      
       return { error: null };
+      
     } catch (error) {
       console.error('Erro ao excluir conta:', error);
+      
+      // Se o erro for de permissão, tenta fazer logout mesmo assim
+      if (error?.message?.includes('permission') || error?.message?.includes('403')) {
+        console.warn('Permissão negada, fazendo logout...');
+        try {
+          await signOut();
+          return { 
+            error: new Error('Sua conta foi desativada, mas pode haver um atraso na remoção completa dos dados.') 
+          };
+        } catch (signOutError) {
+          console.error('Erro ao fazer logout após falha na exclusão:', signOutError);
+        }
+      }
+      
       const authError = error instanceof Error ? error : new Error('Erro ao excluir conta');
       setState((prev) => ({ ...prev, error: authError }));
       return { error: authError };
+      
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
     }
