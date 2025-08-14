@@ -1,20 +1,24 @@
 import '@testing-library/jest-dom';
 
 // Mock do localStorage
-const localStorageMock = {
+const localStorageMock: Storage = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
 };
 global.localStorage = localStorageMock;
 
 // Mock do sessionStorage
-const sessionStorageMock = {
+const sessionStorageMock: Storage = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
 };
 global.sessionStorage = sessionStorageMock;
 
