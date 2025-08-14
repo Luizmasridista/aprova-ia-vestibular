@@ -101,11 +101,9 @@ export function Layout() {
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
-          <div className="p-6">
-            <PageTransition>
-              <Outlet />
-            </PageTransition>
-          </div>
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </motion.div>
     </div>
