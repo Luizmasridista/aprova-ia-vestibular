@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_URLS } from '@/config/urls';
+import { securityService } from '@/lib/services/securityService';
 
 type AuthState = {
   user: User | null;
@@ -107,6 +108,9 @@ export function useAuth() {
 
       if (error) throw error;
       
+      // Log successful login
+      setTimeout(() => securityService.logAuthEvent('login'), 0);
+      
       // Redireciona para a página salva ou dashboard como fallback
       const returnTo = sessionStorage.getItem('returnTo') || APP_URLS.DASHBOARD;
       sessionStorage.removeItem('returnTo');
@@ -157,6 +161,9 @@ export function useAuth() {
         };
       }
       
+      // Log successful signup
+      setTimeout(() => securityService.logAuthEvent('signup'), 0);
+      
       return { error: null };
     } catch (error) {
       console.error('❌ Erro ao cadastrar usuário:', error);
@@ -179,6 +186,9 @@ export function useAuth() {
       const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
+      
+      // Log logout event
+      setTimeout(() => securityService.logAuthEvent('logout'), 0);
       
       // Limpeza de dados locais
       localStorage.removeItem('supabase.auth.token');

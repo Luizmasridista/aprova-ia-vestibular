@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { securityService } from './securityService';
 
 export interface GoogleCalendarIntegration {
   id: string;
@@ -120,6 +121,10 @@ class GoogleCalendarBackendService {
 
       const data = await response.json();
       console.log('✅ [GoogleCalendarBackend] Integração configurada com sucesso');
+      
+      // Log OAuth token write access
+      setTimeout(() => securityService.logOAuthTokenAccess('google_calendar', 'write'), 0);
+      
       return data.integration;
     } catch (error) {
       console.error('❌ [GoogleCalendarBackend] Erro ao configurar integração:', error);

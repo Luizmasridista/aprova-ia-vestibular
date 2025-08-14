@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { aiService } from '../lib/services/aiService';
+import { securityService } from '../lib/services/securityService';
 
 export interface Exercise {
   id: string;
@@ -32,7 +33,6 @@ export interface UserStats {
 
 class ExerciseService {
   private readonly DAILY_LIMIT = 10;
-  private readonly UNLIMITED_USER = 'luizeduardocdn@gmail.com';
 
   /**
    * Gera um novo exercício usando IA
@@ -76,6 +76,9 @@ class ExerciseService {
 
       // Atualizar contador de uso
       await this.updateUsageLimit(userId);
+
+      // Log security event for monitoring
+      await securityService.logExerciseGeneration(exercise.id, mode);
 
       return {
         id: exercise.id,
@@ -236,12 +239,6 @@ class ExerciseService {
    */
   private async checkUsageLimit(userId: string): Promise<boolean> {
     try {
-      // Verificar se é usuário com acesso ilimitado
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user?.email === this.UNLIMITED_USER) {
-        return true;
-      }
-
       // Buscar dados de uso do dia atual
       const today = new Date().toISOString().split('T')[0];
       

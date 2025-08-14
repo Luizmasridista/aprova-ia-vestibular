@@ -577,6 +577,39 @@ export type Database = {
           },
         ]
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       study_plans: {
         Row: {
           created_at: string | null
@@ -924,6 +957,15 @@ export type Database = {
     Functions: {
       delete_user_data: {
         Args: { user_id: string }
+        Returns: undefined
+      }
+      log_security_event: {
+        Args: {
+          p_action: string
+          p_resource_id?: string
+          p_resource_type?: string
+          p_user_id: string
+        }
         Returns: undefined
       }
     }
