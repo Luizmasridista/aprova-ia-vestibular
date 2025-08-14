@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import MyStudyPlans from '@/components/profile/MyStudyPlans';
+
+
+import { Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,13 +21,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { SUPABASE_URL, supabase } from '@/integrations/supabase/client';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { user, updateProfile, updatePassword, deleteAccount } = useAuth();
+  const navigate = useNavigate();
+  const { user, session, signOut, updateProfile, updatePassword } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -34,7 +37,7 @@ export default function ProfilePage() {
     newPassword: '',
     confirmPassword: '',
   });
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     if (user) {
@@ -52,33 +55,6 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
-  };
-
-  async function handleDeleteAccount() {
-    try {
-      setIsDeleting(true);
-      await deleteAccount();
-      
-      // Clear user data from client
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      localStorage.clear();
-      navigate('/');
-      toast({
-        title: 'Sua conta foi excluída com sucesso',
-        variant: 'default'
-      });
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: 'Erro ao excluir conta',
-        description: error instanceof Error ? error.message : 'Tente novamente.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,6 +103,113 @@ export default function ProfilePage() {
     }
   };
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    console.log('Iniciando exclusão de conta...');
+    setIsDeleting(true);
+    
+    try {
+      // Garantir que temos um token válido para autenticar a Edge Function
+      let accessToken = session?.access_token;
+      if (!accessToken) {
+        const { data: sess } = await supabase.auth.getSession();
+        accessToken = sess.session?.access_token;
+      }
+
+      if (!accessToken) {
+        throw new Error('Sessão expirada. Faça login novamente e tente excluir sua conta.');
+      }
+
+      // Mostrar feedback visual de carregamento
+      console.log('Mostrando toast de carregamento...');
+      const loadingToast = toast({
+        title: 'Processando...',
+        description: 'Estamos excluindo sua conta e todos os seus dados.',
+        duration: 0, // Não fecha automaticamente
+      });
+      console.log('Toast de carregamento mostrado');
+
+      try {
+        // Usar o endpoint de proxy configurado no Vite
+        console.log('Enviando requisição para excluir conta...', { accessToken: !!accessToken });
+        
+        const response = await fetch('/functions/v1/delete-user', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+
+        console.log('Resposta recebida:', { 
+          status: response.status, 
+          statusText: response.statusText,
+          ok: response.ok 
+        });
+
+        let data;
+        try {
+          data = await response.json();
+          console.log('Dados da resposta:', data);
+        } catch (e) {
+          console.error('Erro ao fazer parse da resposta:', e);
+          throw new Error('Erro ao processar a resposta do servidor');
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Falha ao processar a exclusão da conta');
+        }
+
+        // Fecha o toast de carregamento
+        loadingToast.dismiss();
+
+        // Mostra mensagem de sucesso
+        toast({
+          title: 'Conta excluída com sucesso',
+          description: 'Todos os seus dados foram removidos com sucesso.',
+          duration: 5000,
+        });
+
+        // Aguarda um pouco para o usuário ver a mensagem
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Faz logout e redireciona para a página inicial
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        // Fecha o toast de carregamento em caso de erro
+        loadingToast.dismiss();
+        throw error; // Repassa o erro para o bloco catch externo
+      }
+    } catch (error) {
+      console.error('Erro ao excluir conta:', error);
+      
+      // Mensagens de erro mais amigáveis
+      let errorMessage = 'Ocorreu um erro ao excluir sua conta. Por favor, tente novamente mais tarde.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Você não tem permissão para realizar esta ação.';
+        } else if (error.message.includes('Falha ao excluir a conta')) {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast({
+        title: 'Erro ao excluir conta',
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -136,9 +219,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Perfil do Usuário</h1>
+          <p className="text-muted-foreground">Gerencie suas informações de perfil e configurações de conta.</p>
+        </div>
         
         <Card>
           <CardHeader>
@@ -150,9 +236,51 @@ export default function ProfilePage() {
                 </CardDescription>
               </div>
               {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} variant="outline">
-                  Editar Perfil
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => setIsEditing(true)} variant="outline">
+                    Editar Perfil
+                  </Button>
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        className="w-full sm:w-auto"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        Excluir Conta
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza que deseja excluir sua conta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação é permanente e removerá todos os seus dados de utilização. Não poderá ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting} onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 active:bg-red-700" 
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await handleDeleteAccount();
+                            setIsDeleteDialogOpen(false);
+                          }} 
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Excluindo...
+                            </>
+                          ) : (
+                            'Confirmar Exclusão'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               ) : (
                 <Button 
                   onClick={() => {
@@ -284,76 +412,7 @@ export default function ProfilePage() {
         {/* Seção Minhas Agendas */}
         <MyStudyPlans className="mt-6" />
         
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Configurações de Conta</CardTitle>
-            <CardDescription>
-              Gerencie as configurações da sua conta e preferências.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col space-y-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium">Excluir Conta</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Esta ação é irreversível. Todos os seus dados serão permanentemente removidos.
-                  </p>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      disabled={isDeleting}
-                      className="!bg-red-600 !text-white hover:!bg-red-700"
-                    >
-                      {isDeleting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Excluindo...
-                        </>
-                      ) : (
-                        'Excluir Conta'
-                      )}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
-                        Confirmar Exclusão de Conta
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="space-y-2">
-                        <div>
-                          <strong>Esta ação é irreversível!</strong> Ao confirmar, todos os seus dados serão permanentemente excluídos:
-                        </div>
-                        <ul className="list-disc list-inside space-y-1 text-sm">
-                          <li>Histórico de exercícios e resultados</li>
-                          <li>Eventos do calendário</li>
-                          <li>Planos de estudo</li>
-                          <li>Configurações de perfil</li>
-                          <li>Conta de usuário</li>
-                        </ul>
-                        <div className="text-sm font-medium">
-                          Tem certeza de que deseja continuar?
-                        </div>
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteAccount}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Sim, Excluir Conta
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Configurações de Conta removidas temporariamente */}
       </div>
     </div>
   );

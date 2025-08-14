@@ -14,6 +14,18 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy para as funções do Supabase
+      '/functions/v1': {
+        target: 'https://glrdhaihzagnryzmmsuz.supabase.co/functions/v1',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/functions\/v1/, ''),
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.error('Erro no proxy:', err);
+          });
+        }
+      },
     },
   },
   plugins: [

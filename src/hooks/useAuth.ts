@@ -18,7 +18,6 @@ type AuthActions = {
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   updateProfile: (data: Record<string, string | number | boolean | null>) => Promise<{ error: Error | null }>;
-  deleteAccount: () => Promise<{ error: Error | null }>;
 };
 
 export function useAuth() {
@@ -129,24 +128,42 @@ export function useAuth() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('🔐 Iniciando cadastro para:', email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: userData.fullName,
+            full_name: userData.fullName || '',
             ...userData,
           },
-          emailRedirectTo: `${window.location.origin}${APP_URLS.AUTH_CALLBACK}`,
+          emailRedirectTo: `${window.location.origin}${APP_URLS.AUTH_CALLBACK}?returnTo=${encodeURIComponent(APP_URLS.DASHBOARD)}`,
         },
       });
 
-      if (error) throw error;
+      console.log('🔍 Resposta do signUp:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro no signUp:', error);
+        throw error;
+      }
+      
+      // Se o email já estiver confirmado, redireciona para o dashboard
+      if (data?.user?.identities && data.user.identities.length === 0) {
+        console.warn('⚠️ Usuário já existe:', email);
+        return { 
+          error: new Error('Este email já está cadastrado. Por favor, faça login.') 
+        };
+      }
       
       return { error: null };
     } catch (error) {
-      console.error('Erro ao cadastrar usuário:', error);
-      const authError = error instanceof Error ? error : new Error('Erro ao cadastrar usuário');
+      console.error('❌ Erro ao cadastrar usuário:', error);
+      const authError = error instanceof Error 
+        ? error 
+        : new Error('Erro ao cadastrar usuário');
+      
       setState((prev) => ({ ...prev, error: authError }));
       return { error: authError };
     } finally {
@@ -251,49 +268,6 @@ export function useAuth() {
     }
   };
 
-  // Função para excluir a conta do usuário
-  const deleteAccount = async (): Promise<{ error: Error | null }> => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      if (!state.user) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      // Chama a função Edge para deletar a conta
-      const { error } = await supabase.functions.invoke('delete-user', {
-        body: { userId: state.user.id }
-      });
-
-      if (error) throw error;
-
-      await signOut();
-      return { error: null };
-      
-    } catch (error) {
-      console.error('Erro ao excluir conta:', error);
-      
-      // Se o erro for de permissão, tenta fazer logout mesmo assim
-      if (error?.message?.includes('permission') || error?.message?.includes('403')) {
-        console.warn('Permissão negada, fazendo logout...');
-        try {
-          await signOut();
-          return { 
-            error: new Error('Sua conta foi desativada, mas pode haver um atraso na remoção completa dos dados.') 
-          };
-        } catch (signOutError) {
-          console.error('Erro ao fazer logout após falha na exclusão:', signOutError);
-        }
-      }
-      
-      const authError = error instanceof Error ? error : new Error('Erro ao excluir conta');
-      setState((prev) => ({ ...prev, error: authError }));
-      return { error: authError };
-      
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
 
   // Retorna o estado e as ações
   return {
@@ -305,7 +279,6 @@ export function useAuth() {
       resetPassword,
       updatePassword,
       updateProfile,
-      deleteAccount,
     },
   };
 }

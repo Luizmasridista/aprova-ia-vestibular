@@ -1,16 +1,21 @@
 // @deno-types="https://esm.sh/v135/@supabase/functions-js@2.4.4/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS, DELETE',
-  'Access-Control-Max-Age': '86400', // 24 hours
-  'Access-Control-Allow-Credentials': 'true',
-  'Content-Type': 'application/json; charset=utf-8'
+function buildCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin ?? '*'
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, DELETE',
+    'Access-Control-Max-Age': '86400', // 24 hours
+    // Do not set Allow-Credentials with wildcard origin
+    'Content-Type': 'application/json; charset=utf-8'
+  }
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get('Origin'))
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { 
@@ -40,8 +45,8 @@ Deno.serve(async (req) => {
     
     // Create Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(
-      process.env.SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
@@ -101,7 +106,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Internal server error' }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     )
   }
